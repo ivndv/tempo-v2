@@ -65,6 +65,14 @@ export default async function LocaleLayout({
 	return (
 		<html lang={locale} suppressHydrationWarning>
 			<body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
+				{/*
+				 * next-themes genera un script inline con el helper `__name` del bundler.
+				 * Lo definimos antes para evitar "ReferenceError: __name is not defined".
+				 */}
+				<script
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: polyfill estático de una línea.
+					dangerouslySetInnerHTML={{ __html: "self.__name=self.__name||function(f){return f}" }}
+				/>
 				<ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
 					<NextIntlClientProvider messages={mensajesCliente}>{children}</NextIntlClientProvider>
 				</ThemeProvider>
