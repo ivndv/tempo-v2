@@ -76,7 +76,7 @@ function principal(): void {
 	const archivo = process.argv[2];
 
 	if (!archivo) {
-		console.error("Uso: bun scripts/perf/resumen.ts <perf.ndjson>");
+		console.error("Uso: bun tools/perf/resumen.ts <perf.ndjson>");
 		process.exit(1);
 	}
 
