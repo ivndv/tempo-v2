@@ -9,6 +9,14 @@ initOpenNextCloudflareForDev();
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
+	experimental: {
+		// Reutiliza el payload RSC en el navegador durante 30 s. Sin esto, Next
+		// vuelve al servidor en cada navegación (default: dynamic = 0).
+		staleTimes: {
+			dynamic: 30,
+			static: 300,
+		},
+	},
 	async redirects() {
 		return [
 			{ source: "/precios", destination: "/pricing", permanent: true },
