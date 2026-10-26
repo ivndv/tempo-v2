@@ -8,7 +8,8 @@
 			"!dist",
 			"!coverage",
 			"!supabase/.temp",
-			"!.open-next"
+			"!.open-next",
+			"!.wrangler"
 		]
 	},
 	"formatter": {
