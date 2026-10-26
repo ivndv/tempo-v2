@@ -18,21 +18,30 @@ export function SyncOnLogin() {
 
 	useEffect(() => {
 		let activo = true;
+		let ultima = 0;
+		// Sincroniza al montar, cada minuto y al volver a la pestaña (con throttle).
+		const INTERVALO_MS = 60_000;
 
-		const ejecutar = async () => {
+		const ejecutar = async (forzar = false) => {
 			if (!navigator.onLine || ejecutando.current) {
 				return;
 			}
 
+			if (!forzar && Date.now() - ultima < INTERVALO_MS) {
+				return;
+			}
+
+			ultima = Date.now();
 			ejecutando.current = true;
 
 			try {
 				const supabase = createClient();
+				// getSession lee la cookie sin ir a GoTrue; el sync fallará si expiró.
 				const {
-					data: { user },
-				} = await supabase.auth.getUser();
+					data: { session },
+				} = await supabase.auth.getSession();
 
-				if (!user) {
+				if (!session) {
 					if (activo) {
 						setEstado("idle");
 						setPendientes(0);
@@ -75,11 +84,11 @@ export function SyncOnLogin() {
 			}
 		};
 
-		void ejecutar();
-		const intervalo = window.setInterval(ejecutar, 15_000);
+		void ejecutar(true);
+		const intervalo = window.setInterval(() => void ejecutar(true), INTERVALO_MS);
 
 		const onOnline = () => {
-			void ejecutar();
+			void ejecutar(true);
 		};
 		const onVisibility = () => {
 			if (document.visibilityState === "visible") {
