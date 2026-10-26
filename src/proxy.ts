@@ -50,6 +50,9 @@ export async function proxy(request: NextRequest) {
 		return respuestaIntl;
 	}
 
+	// Nota: Next elimina `next-router-*` y `rsc` antes del middleware, así que no
+	// se puede detectar un prefetch aquí. El coste se ataca con caché/ES256.
+
 	// 2. Refresca la sesión de Supabase y escribe las cookies sobre la respuesta de intl.
 	const supabase = createServerClient(
 		process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -73,9 +76,8 @@ export async function proxy(request: NextRequest) {
 	);
 
 	const inicioAuth = performance.now();
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
+	const { data: authData } = await supabase.auth.getClaims();
+	const autenticado = Boolean(authData?.claims?.sub);
 
 	// Log de rendimiento del middleware (se une con el resto por `cf-ray`).
 	if (process.env.PERF_LOGS === "1") {
@@ -90,7 +92,7 @@ export async function proxy(request: NextRequest) {
 	}
 
 	// 4. Si ya hay sesión, las pantallas de acceso no tienen sentido.
-	if (user && paginasAuth.includes(ruta)) {
+	if (autenticado && paginasAuth.includes(ruta)) {
 		const url = request.nextUrl.clone();
 		url.pathname = APP[locale];
 		url.search = "";

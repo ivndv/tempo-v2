@@ -6,6 +6,8 @@ export class SupabaseAuthAdapter implements AuthGateway {
 	constructor(private readonly supabase: SupabaseClient<Database>) {}
 
 	async obtenerUsuario(): Promise<Usuario | null> {
+		// Se mantiene getUser hasta migrar a claves asimétricas (ES256): con
+		// getClaims el email depende de los claims del token. Ver docs/perf.
 		const {
 			data: { user },
 			error,
