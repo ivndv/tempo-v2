@@ -12,6 +12,7 @@ coverage
 .wrangler
 .open-next
 cloudflare-env.d.ts
+*.ndjson
 test-results
 playwright-report
 *.tsbuildinfo

@@ -10,7 +10,9 @@
 	},
 	"vars": {
 		"APP_ENV": "production",
-		"APP_NAMESPACE": "tempo"
+		"APP_NAMESPACE": "tempo",
+		// Logs de rendimiento por consulta (apagar con "0" al terminar el diagnóstico).
+		"PERF_LOGS": "1"
 	},
 	"observability": {
 		"logs": {

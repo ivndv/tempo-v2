@@ -72,9 +72,22 @@ export async function proxy(request: NextRequest) {
 		},
 	);
 
+	const inicioAuth = performance.now();
 	const {
 		data: { user },
 	} = await supabase.auth.getUser();
+
+	// Log de rendimiento del middleware (se une con el resto por `cf-ray`).
+	if (process.env.PERF_LOGS === "1") {
+		console.log(
+			JSON.stringify({
+				t: "mw",
+				ray: request.headers.get("cf-ray"),
+				ruta: pathname,
+				authMs: Math.round(performance.now() - inicioAuth),
+			}),
+		);
+	}
 
 	// 4. Si ya hay sesión, las pantallas de acceso no tienen sentido.
 	if (user && paginasAuth.includes(ruta)) {

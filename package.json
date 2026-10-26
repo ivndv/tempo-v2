@@ -23,7 +23,8 @@
 		"cf:build": "opennextjs-cloudflare build",
 		"cf:preview": "opennextjs-cloudflare preview",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-		"cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+		"cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+		"perf:resumen": "bun scripts/perf/resumen.ts"
 	},
 	"dependencies": {
 		"@polar-sh/nextjs": "^1.1.0",

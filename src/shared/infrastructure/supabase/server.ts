@@ -1,13 +1,16 @@
 import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { Database } from "../db/database.types";
+import { fetchObservado } from "../perf/observador";
 
 // Cliente de Supabase para Server Components, Server Actions y Route Handlers.
 // Usa las cookies de la sesión para que RLS aplique con el usuario actual.
 export async function createClient() {
 	const cookieStore = await cookies();
+	const cabeceras = await headers();
+	const observador = { ray: cabeceras.get("cf-ray") ?? "local" };
 
 	return createServerClient<Database>(
 		process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -27,6 +30,9 @@ export async function createClient() {
 						// El proxy refresca la sesión en la siguiente request.
 					}
 				},
+			},
+			global: {
+				fetch: fetchObservado(observador),
 			},
 		},
 	);
