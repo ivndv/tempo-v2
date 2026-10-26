@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { Plan } from "@/modules/billing/domain/plan";
 import type { Dispositivo } from "@/modules/devices/domain/dispositivo";
 import { GuestSettingsPanel } from "@/modules/profile/ui/GuestSettingsPanel";
 import { SettingsPanel } from "@/modules/profile/ui/SettingsPanel";
@@ -38,8 +39,12 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
 			: "preferences";
 
 	const contenedor = user ? await getServerContainer() : null;
-	const plan = contenedor ? await contenedor.billing.plan.execute() : "free";
-	const perfil = user ? await getPerfilActual() : null;
+
+	// Plan y perfil son independientes: se piden en paralelo.
+	const [plan, perfil] = await Promise.all([
+		contenedor ? contenedor.billing.plan.execute() : Promise.resolve<Plan>("free"),
+		user ? getPerfilActual() : Promise.resolve(null),
+	]);
 
 	let dispositivos: Dispositivo[] = [];
 

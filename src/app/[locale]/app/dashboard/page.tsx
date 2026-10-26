@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import type { DashboardResumen } from "@/modules/analytics/domain/dashboard";
 import { DashboardPro } from "@/modules/analytics/ui/DashboardPro";
 import { DashboardView } from "@/modules/analytics/ui/DashboardView";
+import type { Plan } from "@/modules/billing/domain/plan";
 import { getServerContainer } from "@/shared/infrastructure/container";
 import { getPerfilActual } from "@/shared/infrastructure/getPerfilActual";
 import { getUsuarioActual } from "@/shared/infrastructure/getUsuarioActual";
@@ -22,9 +23,13 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
 	const busqueda = await searchParams;
 
 	const user = await getUsuarioActual();
-	const perfil = user ? await getPerfilActual() : null;
 	const contenedor = user ? await getServerContainer() : null;
-	const plan = contenedor ? await contenedor.billing.plan.execute() : "free";
+
+	// Perfil y plan son independientes: se piden en paralelo.
+	const [perfil, plan] = await Promise.all([
+		user ? getPerfilActual() : Promise.resolve(null),
+		contenedor ? contenedor.billing.plan.execute() : Promise.resolve<Plan>("free"),
+	]);
 
 	const rangoBruto = Array.isArray(busqueda.range) ? busqueda.range[0] : busqueda.range;
 	const dispositivoBruto = Array.isArray(busqueda.device) ? busqueda.device[0] : busqueda.device;
@@ -39,21 +44,20 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
 	let offline = false;
 
 	if (contenedor && plan === "pro") {
-		try {
-			dispositivos = (await contenedor.dispositivos.listar.execute()).map((dispositivo) => ({
+		// Ambos dependen del plan, pero no entre sí: se piden en paralelo.
+		const [resDispositivos, resDatos] = await Promise.allSettled([
+			contenedor.dispositivos.listar.execute(),
+			contenedor.analytics.dashboard.execute({ dias: rango, deviceId }),
+		]);
+
+		if (resDispositivos.status === "rejected" || resDatos.status === "rejected") {
+			offline = true;
+		} else {
+			dispositivos = resDispositivos.value.map((dispositivo) => ({
 				id: dispositivo.id,
 				nombre: dispositivo.nombre,
 			}));
-		} catch {
-			offline = true;
-		}
-	}
-
-	if (contenedor && plan === "pro" && !offline) {
-		try {
-			datosPro = await contenedor.analytics.dashboard.execute({ dias: rango, deviceId });
-		} catch {
-			offline = true;
+			datosPro = resDatos.value;
 		}
 	}
 
