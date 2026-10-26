@@ -53,6 +53,7 @@ export function HeaderNav({ items, desktopActions, mobileActions }: HeaderNavPro
 					<Link
 						key={String(item.href)}
 						href={item.href}
+						prefetch={false}
 						aria-current={esActivo(String(item.href)) ? "page" : undefined}
 						className={`${enlaceNavBase} ${
 							esActivo(String(item.href)) ? enlaceNavActivo : enlaceNavInactivo
@@ -88,6 +89,7 @@ export function HeaderNav({ items, desktopActions, mobileActions }: HeaderNavPro
 							<Link
 								key={String(item.href)}
 								href={item.href}
+								prefetch={false}
 								aria-current={esActivo(String(item.href)) ? "page" : undefined}
 								className={`${enlaceNavBase} border-b border-border py-3 ${
 									esActivo(String(item.href)) ? enlaceNavActivo : enlaceNavInactivo

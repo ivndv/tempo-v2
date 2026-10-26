@@ -19,6 +19,7 @@ export function SettingsTabs({ tabs, active, label }: SettingsTabsProps) {
 				<Link
 					key={tab.key}
 					href={{ pathname: "/app/settings", query: { tab: tab.key } }}
+					prefetch={false}
 					aria-current={active === tab.key ? "page" : undefined}
 					className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm transition ${
 						active === tab.key
