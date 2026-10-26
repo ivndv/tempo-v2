@@ -1,0 +1,117 @@
+# Tempo CI/CD: lint, tipos y tests en paralelo; build de Workers en PR/develop;
+# deploy a Cloudflare solo en push a main y con DEPLOY_ENABLED=true.
+name: Tempo CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+# Cancela ejecuciones previas del mismo ref para no gastar minutos de CI
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permisos mínimos: solo lectura del repositorio
+permissions:
+  contents: read
+
+# Variables públicas requeridas en tiempo de build (no son secretos).
+# Se configuran en Settings > Secrets and variables > Actions > Variables.
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+  NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: ${{ vars.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED }}
+
+jobs:
+  # Job 1: lint y verificación de formato con Biome
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun env
+        uses: ./.github/actions/setup
+
+      - name: Format & lint check
+        run: bun run lint
+
+  # Job 2: verificación de tipos con TypeScript
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun env
+        uses: ./.github/actions/setup
+
+      - name: Typecheck
+        run: bun run typecheck
+
+  # Job 3: pruebas unitarias con Vitest
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun env
+        uses: ./.github/actions/setup
+
+      - name: Run tests
+        run: bun run test
+
+  # Job 4: compila con OpenNext sin desplegar.
+  # Valida que el Worker compile en PRs y en develop.
+  build:
+    name: Build Workers (OpenNext)
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/develop'
+    needs: [lint, typecheck, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun env
+        uses: ./.github/actions/setup
+
+      - name: Build for Cloudflare Workers
+        run: bun run cf:build
+
+  # Job 5: despliegue en Cloudflare (solo push a main y con el flag activo).
+  # Requiere los secrets CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID.
+  deploy:
+    name: Deploy to Cloudflare
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    needs: [lint, typecheck, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun env
+        uses: ./.github/actions/setup
+
+      - name: Build & Deploy
+        run: bun run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

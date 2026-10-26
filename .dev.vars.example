@@ -1,0 +1,6 @@
+# Secretos del Worker para `bun run cf:preview` (copia a `.dev.vars`).
+# Los NEXT_PUBLIC_* se inyectan en build; aquí solo van los valores de servidor.
+#
+# SUPABASE_SERVICE_ROLE_KEY=
+# UPSTASH_REDIS_REST_URL=
+# UPSTASH_REDIS_REST_TOKEN=

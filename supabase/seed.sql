@@ -1,0 +1,3 @@
+-- Seed local vacío.
+-- Los perfiles se crean automáticamente con el trigger de auth.users.
+-- Los usuarios de prueba se crean desde la app o con la Admin API.
