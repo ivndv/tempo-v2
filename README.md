@@ -51,12 +51,10 @@ Aplicación web para gestionar tu tiempo de estudio o trabajo con la técnica Po
 
 ## Despliegue
 
-La aplicación se encuentra desplegada en **Cloudflare Workers** mediante OpenNext. Puedes usarla directamente aquí: [tempo2.mgdc.site](https://tempo2.mgdc.site/)
+La aplicación se encuentra desplegada en **Cloudflare Workers** mediante OpenNext. Puedes usarla directamente aquí: [Tempo v2](https://tempo2.mgdc.site/)
 
 ## Licencia
 
-Licencia de Uso Personal:
+[PolyForm Noncommercial 1.0.0](LICENSE). Uso personal y no comercial; el uso comercial requiere permiso.
 
-Este software es propiedad de **Ivan Cruz**. Se permite el uso de este software solo para fines personales y no comerciales. No se permite la distribución, modificación ni uso comercial de este software sin el consentimiento expreso de **Ivan Cruz**.
-
-Cualquier uso no autorizado puede resultar en acciones legales.
+© 2026 Ivan Cruz
