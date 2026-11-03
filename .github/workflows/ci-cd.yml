@@ -34,7 +34,7 @@ env:
 jobs:
   # Job 1: lint y verificación de formato con Biome
   lint:
-    name: Lint & Format Check
+    name: Biome
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -44,8 +44,8 @@ jobs:
       - name: Setup Bun env
         uses: ./.github/actions/setup
 
-      - name: Format & lint check
-        run: bun run lint
+      - name: Biome CI
+        run: bunx biome ci .
 
   # Job 2: verificación de tipos con TypeScript
   typecheck:
