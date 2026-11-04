@@ -43,7 +43,7 @@ Guía operativa y técnica para agentes de Inteligencia Artificial que colaboren
 | **Validación** | **Zod 4** | entradas y contratos |
 | **Lint/Format** | **Biome 2** | tabs, comillas dobles |
 | **Tests** | **Vitest 5** + **Playwright** | 6 specs unitarios + E2E |
-| **CI/CD** | **GitHub Actions** | gate `DEPLOY_ENABLED=true` en `main` |
+| **CI/CD** | **GitHub Actions** | Biome, tipos y tests; build y deploy desde `main` |
 
 ---
 
@@ -186,7 +186,7 @@ bun run deploy       # compila y despliega
 * **PROHIBIDO realizar commits o push sin la aprobación explícita del usuario.**
 * **Flujo de ramas:** desarrollo en `develop`; merge a `main` por fast-forward tras validar.
 * **Mensajes de commit:** *Conventional Commits* en minúsculas y español, **una sola línea** sin cuerpo.
-* **Deploy:** solo desde `main` y con `DEPLOY_ENABLED=true`.
+* **Deploy:** build y deploy automáticos solo desde `main`.
 * No tocar el dominio de producción ni la app legacy hasta el cutover.
 
 ---

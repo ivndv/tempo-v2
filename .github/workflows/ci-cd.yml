@@ -1,5 +1,5 @@
-# Tempo CI/CD: lint, tipos y tests en paralelo; build de Workers en PR/develop;
-# deploy a Cloudflare solo en push a main y con DEPLOY_ENABLED=true.
+# Tempo CI/CD: lint, tipos y tests en paralelo; build y deploy a Cloudflare
+# solo en push a main.
 name: Tempo CI/CD
 
 on:
@@ -77,11 +77,11 @@ jobs:
       - name: Run tests
         run: bun run test
 
-  # Job 4: compila con OpenNext sin desplegar.
-  # Valida que el Worker compile en PRs y en develop.
-  build:
-    name: Build Workers (OpenNext)
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/develop'
+  # Job 4: build y despliegue en Cloudflare (solo push a main).
+  # Requiere los secrets CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID.
+  deploy:
+    name: Deploy to Cloudflare
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [lint, typecheck, test]
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -95,23 +95,8 @@ jobs:
       - name: Build for Cloudflare Workers
         run: bun run cf:build
 
-  # Job 5: despliegue en Cloudflare (solo push a main y con el flag activo).
-  # Requiere los secrets CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID.
-  deploy:
-    name: Deploy to Cloudflare
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
-    needs: [lint, typecheck, test]
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup Bun env
-        uses: ./.github/actions/setup
-
-      - name: Build & Deploy
-        run: bun run deploy
+      - name: Deploy to Cloudflare Workers
+        run: bunx opennextjs-cloudflare deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
