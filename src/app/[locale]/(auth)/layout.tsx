@@ -15,7 +15,10 @@ export default async function AuthLayout({
 	return (
 		<>
 			<SiteHeader />
-			<div id="contenido" className="flex flex-1 flex-col">
+			<div
+				id="contenido"
+				className="flex flex-1 flex-col scroll-mt-[var(--header-h)] pt-[var(--header-h)]"
+			>
 				{children}
 			</div>
 			<SiteFooter />

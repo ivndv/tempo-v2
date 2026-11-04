@@ -25,6 +25,9 @@
 	--info-bg: #f0f9ff;
 	--info-border: #bae6fd;
 	--info-fg: #075985;
+
+	/* Alto del header fijo, incluida la safe area de iOS */
+	--header-h: calc(3.5rem + env(safe-area-inset-top, 0px));
 }
 
 .dark {

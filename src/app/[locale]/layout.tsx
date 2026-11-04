@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
@@ -10,6 +10,11 @@ import { SITE_URL } from "@/i18n/seo";
 export function generateStaticParams() {
 	return routing.locales.map((locale) => ({ locale }));
 }
+
+export const viewport: Viewport = {
+	// Necesario para que env(safe-area-inset-*) no valga 0 en iOS.
+	viewportFit: "cover",
+};
 
 export async function generateMetadata({
 	params,

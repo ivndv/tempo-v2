@@ -9,7 +9,7 @@ interface HeaderShellProps {
 // Estructura del header: marca a la izquierda, nav al centro y acciones a la derecha.
 export function HeaderShell({ children, skipLabel }: HeaderShellProps) {
 	return (
-		<header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur">
+		<header className="fixed inset-x-0 top-0 z-40 border-b border-border/60 bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150 transition-colors duration-300 supports-[backdrop-filter]:bg-background/40">
 			<a href="#contenido" className={saltoContenido}>
 				{skipLabel}
 			</a>

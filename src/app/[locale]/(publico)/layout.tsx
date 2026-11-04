@@ -16,7 +16,10 @@ export default async function PublicLayout({
 	return (
 		<>
 			<SiteHeader acciones={<SessionActions />} />
-			<div id="contenido" className="flex flex-1 flex-col">
+			<div
+				id="contenido"
+				className="flex flex-1 flex-col scroll-mt-[var(--header-h)] pt-[var(--header-h)]"
+			>
 				{children}
 			</div>
 			<SiteFooter />
