@@ -48,10 +48,10 @@ export function StorageNotice() {
 	}
 
 	return (
-		<div className="mx-auto mt-4 w-full max-w-6xl px-4 sm:px-6">
+		<div className="w-full">
 			<div
 				role="status"
-				className="flex items-start justify-between gap-3 rounded-xl border border-warning-border bg-warning-bg px-4 py-3 text-xs text-warning-fg"
+				className="flex items-start justify-between gap-3 rounded-xl border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-fg"
 			>
 				<p>{t("warning")}</p>
 				<button

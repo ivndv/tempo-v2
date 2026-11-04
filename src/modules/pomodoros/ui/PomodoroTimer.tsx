@@ -50,41 +50,41 @@ export function PomodoroTimer() {
 
 	return (
 		<div className="space-y-4">
-			<section className="rounded-2xl border border-border bg-surface p-6">
-				<div className="flex flex-wrap items-start justify-between gap-4">
-					<div>
-						<p className="text-xs font-medium uppercase tracking-[0.3em] text-primary">
-							{sesion ? modo : bloqueCompletado ? t("blockCompleted") : t("pomodoro")}
-						</p>
-						<h2 className="mt-1 text-xl font-semibold tracking-tight">
-							{sesion
-								? t("blockOf", { label: etiqueta })
-								: bloqueCompletado
-									? t("completedOf", { label: etiqueta })
-									: t("chooseBlock")}
-						</h2>
-						<p className="mt-1 text-xs text-muted">
-							{sesion
-								? t("cycles", {
-										label: etiqueta,
-										count: sesion.bloque.ciclosCompletados,
+			<div className="flex flex-wrap items-start justify-between gap-4">
+				<div>
+					<p className="text-sm font-medium uppercase tracking-[0.24em] text-primary">
+						{sesion ? modo : bloqueCompletado ? t("blockCompleted") : t("pomodoro")}
+					</p>
+					<h2 className="mt-1.5 text-2xl font-semibold tracking-tight">
+						{sesion
+							? t("blockOf", { label: etiqueta })
+							: bloqueCompletado
+								? t("completedOf", { label: etiqueta })
+								: t("chooseBlock")}
+					</h2>
+					<p className="mt-1.5 text-sm text-muted">
+						{sesion
+							? t("cycles", {
+									label: etiqueta,
+									count: sesion.bloque.ciclosCompletados,
+								})
+							: bloqueCompletado
+								? t("completedSummary", {
+										minutes: bloqueCompletado.focoAcumuladoMin,
+										cycles: bloqueCompletado.ciclosCompletados,
 									})
-								: bloqueCompletado
-									? t("completedSummary", {
-											minutes: bloqueCompletado.focoAcumuladoMin,
-											cycles: bloqueCompletado.ciclosCompletados,
-										})
-									: t("blockHint")}
-						</p>
-					</div>
-
-					{estado ? (
-						<span className="rounded-full border border-border px-3 py-1 text-xs text-muted">
-							{estado}
-						</span>
-					) : null}
+								: t("blockHint")}
+					</p>
 				</div>
 
+				{estado ? (
+					<span className="rounded-full border border-border px-3 py-1 text-xs text-muted">
+						{estado}
+					</span>
+				) : null}
+			</div>
+
+			<section className="rounded-2xl border border-border bg-surface p-6">
 				{error ? (
 					<p className="mt-4 rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-fg">
 						{error}
