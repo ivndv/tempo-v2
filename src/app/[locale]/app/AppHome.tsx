@@ -15,7 +15,7 @@ export function AppHome({ user }: AppHomeProps) {
 	const { sesion, bloqueCompletado } = useTimerSession();
 
 	return (
-		<main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-10">
+		<main className="mx-auto flex min-h-[calc(100svh-var(--header-h))] w-full max-w-3xl flex-1 flex-col justify-center gap-6 px-6 py-10">
 			{user ? (
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
