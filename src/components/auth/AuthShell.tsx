@@ -11,7 +11,7 @@ interface AuthShellProps {
 
 export function AuthShell({ titulo, subtitulo, children, pie, volverA = "/" }: AuthShellProps) {
 	return (
-		<main className="mx-auto flex w-full max-w-5xl flex-1 items-center px-4 py-10 sm:px-6 sm:py-16">
+		<main className="mx-auto flex min-h-[calc(100svh-var(--header-h))] w-full max-w-5xl flex-1 items-center px-4 py-10 sm:px-6 sm:py-16">
 			<div className="mx-auto w-full max-w-sm">
 				<div className="mb-6">
 					<VolverAtras fallback={volverA} />
