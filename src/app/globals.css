@@ -92,3 +92,12 @@ html.dark {
 body {
 	min-height: 100dvh;
 }
+
+/* Resplandor del hero derivado del color primario del tema */
+.hero-glow {
+	background: radial-gradient(
+		ellipse at top,
+		color-mix(in srgb, var(--primary) 8%, transparent),
+		transparent 65%
+	);
+}
