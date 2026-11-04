@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import "../globals.css";
@@ -81,6 +82,16 @@ export default async function LocaleLayout({
 				<ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
 					<NextIntlClientProvider messages={mensajesCliente}>{children}</NextIntlClientProvider>
 				</ThemeProvider>
+				<Script
+					src="https://static.cloudflareinsights.com/beacon.min.js"
+					data-cf-beacon='{"token":"8c98c2841f424e3c8ae37fabf717417d"}'
+					strategy="afterInteractive"
+				/>
+				<Script
+					src="https://umami.fluxdv.icu/script.js"
+					data-website-id="535e4ec5-bd20-4ed8-9bf5-2744642ba246"
+					strategy="afterInteractive"
+				/>
 			</body>
 		</html>
 	);
