@@ -3,11 +3,11 @@ import { chromium } from "playwright";
 
 // Mide el dashboard con Chrome real vía CDP (Turnstile bloquea Playwright puro).
 // 1. google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/tempo-cdp \
-//      https://tempo-v2.liuma.app/login
+//      https://tempo.liuma.app/login
 // 2. Inicia sesión a mano en esa ventana.
 // 3. node tools/perf/medir.mjs
 
-const BASE = "https://tempo-v2.liuma.app";
+const BASE = "https://tempo.liuma.app";
 const SALIDA = "/tmp/opencode/medicion.json";
 const RECARGAS = 12;
 const PAUSA_MS = 8000;
@@ -16,7 +16,7 @@ const navegador = await chromium.connectOverCDP("http://127.0.0.1:9222");
 const contexto = navegador.contexts()[0];
 
 async function paginaTempo() {
-	const paginas = contexto.pages().filter((p) => p.url().includes("tempo-v2.liuma.app"));
+	const paginas = contexto.pages().filter((p) => p.url().includes("tempo.liuma.app"));
 	return paginas[0] ?? contexto.pages()[0];
 }
 

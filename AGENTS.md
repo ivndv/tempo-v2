@@ -5,7 +5,7 @@
 **Tempo v2** es una aplicación de productividad basada en la técnica Pomodoro: bloques de enfoque vinculados a tareas, descansos, estadísticas y sincronización multi-dispositivo.
 
 - **Propósito:** temporizador por bloques con soporte offline real (Dexie + outbox) y sincronización a la nube, con planes Free y Pro validados en servidor.
-- **Dominio en producción:** [https://tempo-v2.liuma.app](https://tempo-v2.liuma.app)
+- **Dominio en producción:** [https://tempo.liuma.app](https://tempo.liuma.app)
 - **App legacy:** `../tempo` → `tempo.mgdc.site` (no se toca hasta el cutover).
 - **Documentación de arquitectura:** [`docs/diseno-y-arquitectura.md`](docs/diseno-y-arquitectura.md)
 - **Decisiones:** `docs/adr/0001` … `0005`.
