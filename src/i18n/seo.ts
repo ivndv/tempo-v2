@@ -1,7 +1,7 @@
 import { getPathname } from "./navigation";
 import { routing } from "./routing";
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://tempo2.mgdc.site";
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://tempo-v2.liuma.app";
 
 type Href = Parameters<typeof getPathname>[0]["href"];
 

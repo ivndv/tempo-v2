@@ -26,7 +26,7 @@ Aplicación web para gestionar tu tiempo de estudio o trabajo con la técnica Po
 
 ## Uso
 
-- **Acceder a la Aplicación**: entra directamente desde cualquier navegador aquí: [Tempo v2](https://tempo2.mgdc.site/).
+- **Acceder a la Aplicación**: entra directamente desde cualquier navegador aquí: [Tempo v2](https://tempo-v2.liuma.app/).
 - **Modo invitado o cuenta**: usa el temporizador al instante sin registrarte, o crea tu cuenta para sincronizar tareas, sesiones y estadísticas en la nube.
 - **Configurar y Concentrarte**: crea una tarea, elige la duración del bloque, presiona iniciar y deja que la app encadene los descansos.
 - **Consultar tu Progreso**: revisa el resumen diario y los gráficos semanales para ver en qué se te va el tiempo.
@@ -51,7 +51,7 @@ Aplicación web para gestionar tu tiempo de estudio o trabajo con la técnica Po
 
 ## Despliegue
 
-La aplicación se encuentra desplegada en **Cloudflare Workers** mediante OpenNext. Puedes usarla directamente aquí: [Tempo v2](https://tempo2.mgdc.site/)
+La aplicación se encuentra desplegada en **Cloudflare Workers** mediante OpenNext. Puedes usarla directamente aquí: [Tempo v2](https://tempo-v2.liuma.app/)
 
 ## Licencia
 

@@ -88,7 +88,7 @@ export default async function LocaleLayout({
 					strategy="afterInteractive"
 				/>
 				<Script
-					src="https://umami.fluxdv.icu/script.js"
+					src="https://umami.liuma.app/script.js"
 					data-website-id="535e4ec5-bd20-4ed8-9bf5-2744642ba246"
 					strategy="afterInteractive"
 				/>

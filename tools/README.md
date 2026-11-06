@@ -22,7 +22,7 @@ Mide 12 recargas del dashboard y 5 navegaciones suaves con Chrome real vía CDP.
 
 ```bash
 google-chrome --remote-debugging-port=9222 \
-  --user-data-dir=/tmp/tempo-cdp https://tempo2.mgdc.site/login
+  --user-data-dir=/tmp/tempo-cdp https://tempo-v2.liuma.app/login
 
 node tools/perf/medir.mjs
 ```
