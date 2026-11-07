@@ -11,13 +11,31 @@
 	"vars": {
 		"APP_ENV": "production",
 		"APP_NAMESPACE": "tempo",
-		// Logs de rendimiento por consulta (activar con "1" para medir).
+		// Vuelca el tiempo de cada consulta a los logs
 		"PERF_LOGS": "0"
 	},
 	"observability": {
+		// Interruptor general de observabilidad del Worker
+		"enabled": false,
+		// Fracción de requests registradas; 1 = todas
+		"head_sampling_rate": 1,
+		// Quita los query strings de las URLs en logs y trazas
+		"redact_query_string": true,
 		"logs": {
 			"enabled": true,
-			"invocation_logs": true
+			"head_sampling_rate": 1,
+			"invocation_logs": true,
+			"persist": true
+		},
+		"traces": {
+			// Spans de cada request: fetch salientes, bindings y DO
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"persist": true
+		},
+		"issues": {
+			// Agrupa errores e invocaciones fallidas
+			"enabled": true
 		}
 	}
 }
