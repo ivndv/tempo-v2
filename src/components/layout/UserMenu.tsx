@@ -8,7 +8,7 @@ import { getPathname, Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { useLogout } from "@/modules/auth/ui/useLogout";
 import { guardarTemaDispositivo } from "@/modules/devices/ui/deviceTheme";
-import { createClient } from "@/shared/infrastructure/supabase/client";
+import { useActualizarPerfil } from "@/modules/profile/ui/useProfile";
 
 interface UserMenuProps {
 	email?: string;
@@ -22,6 +22,7 @@ export function UserMenu({ email }: UserMenuProps) {
 	const pathname = usePathname();
 	const { theme, setTheme } = useTheme();
 	const { salir, saliendo } = useLogout();
+	const actualizarPerfil = useActualizarPerfil();
 	const [abierto, setAbierto] = useState(false);
 	const [montado, setMontado] = useState(false);
 	const contenedor = useRef<HTMLDivElement>(null);
@@ -91,14 +92,7 @@ export function UserMenu({ email }: UserMenuProps) {
 	async function cambiarIdioma(destino: "en" | "es") {
 		if (email) {
 			try {
-				const supabase = createClient();
-				const {
-					data: { user },
-				} = await supabase.auth.getUser();
-
-				if (user) {
-					await supabase.from("profiles").update({ locale: destino }).eq("id", user.id);
-				}
+				await actualizarPerfil.mutateAsync({ locale: destino });
 			} catch {
 				// El idioma de la URL manda; el perfil se reintenta al cambiarlo de nuevo.
 			}

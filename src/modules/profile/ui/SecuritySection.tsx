@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 import { getPathname } from "@/i18n/navigation";
-import { createClient } from "@/shared/infrastructure/supabase/client";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 
 interface SecuritySectionProps {
 	email: string;
@@ -40,18 +40,13 @@ export function SecuritySection({ email }: SecuritySectionProps) {
 		setGuardandoCorreo(true);
 		setCorreoEstado(null);
 
-		const supabase = createClient();
-		const { error } = await supabase.auth.updateUser(
-			{ email: nuevoCorreo.trim() },
-			{
-				emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-					rutaSeguridad(),
-				)}`,
-			},
+		const resultado = await getClientContainer().auth.cambiarEmail(
+			nuevoCorreo.trim(),
+			`${window.location.origin}/auth/callback?next=${encodeURIComponent(rutaSeguridad())}`,
 		);
 
-		if (error) {
-			setCorreoEstado({ tipo: "error", texto: error.message });
+		if (!resultado.ok) {
+			setCorreoEstado({ tipo: "error", texto: resultado.error ?? t("securityError") });
 		} else {
 			setCorreoEstado({ tipo: "ok", texto: t("emailSent") });
 			setNuevoCorreo("");
@@ -76,11 +71,10 @@ export function SecuritySection({ email }: SecuritySectionProps) {
 		setGuardandoPassword(true);
 		setPasswordEstado(null);
 
-		const supabase = createClient();
-		const { error } = await supabase.auth.updateUser({ password });
+		const resultado = await getClientContainer().auth.cambiarPassword(password);
 
-		if (error) {
-			setPasswordEstado({ tipo: "error", texto: error.message });
+		if (!resultado.ok) {
+			setPasswordEstado({ tipo: "error", texto: resultado.error ?? t("securityError") });
 		} else {
 			setPasswordEstado({ tipo: "ok", texto: t("passwordUpdated") });
 			setPassword("");

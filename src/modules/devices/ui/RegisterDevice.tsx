@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import { detectarDispositivo, obtenerDeviceId } from "@/shared/infrastructure/device";
-import { createClient } from "@/shared/infrastructure/supabase/client";
+import { dispositivosKeys } from "./useDevices";
 
 function temaLocal(): string | null {
 	try {
@@ -14,9 +15,9 @@ function temaLocal(): string | null {
 	}
 }
 
-// Registra el navegador actual y sincroniza el tema del dispositivo.
+// Registra el navegador actual y sincroniza el tema del dispositivo
 export function RegisterDevice() {
-	const router = useRouter();
+	const queryClient = useQueryClient();
 	const { setTheme } = useTheme();
 
 	useEffect(() => {
@@ -24,47 +25,34 @@ export function RegisterDevice() {
 		const id = obtenerDeviceId();
 		const { nombre, plataforma } = detectarDispositivo();
 		const local = temaLocal();
-		const supabase = createClient();
 
-		void supabase
-			.rpc("registrar_dispositivo", {
-				p_id: id,
-				p_name: nombre,
-				p_platform: plataforma,
-				p_theme: local ?? undefined,
+		void getClientContainer()
+			.dispositivos.registrar.execute({
+				id,
+				nombre,
+				plataforma,
+				tema: local ?? undefined,
 			})
-			.then(async ({ error }) => {
-				if (error || !activo) {
+			.then((resultado) => {
+				if (!activo) {
 					return;
 				}
 
-				// Refresca una vez por sesión para que Ajustes vea el dispositivo nuevo.
-				try {
-					const clave = "tempo:device-registered";
-					if (window.sessionStorage.getItem(clave) !== id) {
-						window.sessionStorage.setItem(clave, id);
-						router.refresh();
-					}
-				} catch {
-					// Sin sessionStorage se evita el refresh para no entrar en bucle.
-				}
+				void queryClient.invalidateQueries({ queryKey: dispositivosKeys.all });
 
 				// Si este navegador nunca eligió tema, recupera el del servidor.
-				if (local) {
-					return;
+				if (!local && resultado.tema) {
+					setTheme(resultado.tema);
 				}
-
-				const { data } = await supabase.from("devices").select("theme").eq("id", id).maybeSingle();
-
-				if (activo && data?.theme) {
-					setTheme(data.theme);
-				}
+			})
+			.catch(() => {
+				// Se reintenta en el próximo montaje
 			});
 
 		return () => {
 			activo = false;
 		};
-	}, [setTheme, router.refresh]);
+	}, [queryClient, setTheme]);
 
 	return null;
 }

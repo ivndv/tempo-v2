@@ -1,18 +1,22 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useState } from "react";
 import { getPathname } from "@/i18n/navigation";
 import type { Plan } from "@/modules/billing/domain/plan";
 import type { Dispositivo } from "@/modules/devices/domain/dispositivo";
+import {
+	useDispositivos,
+	useEliminarDispositivo,
+	useRenombrarDispositivo,
+} from "@/modules/devices/ui/useDevices";
 import type { Perfil } from "@/modules/profile/domain/perfil";
 import { obtenerDeviceId } from "@/shared/infrastructure/device";
-import { createClient } from "@/shared/infrastructure/supabase/client";
 import { zonasHorarias } from "@/shared/infrastructure/timezones";
 import { ExportSection } from "./ExportSection";
 import { SecuritySection } from "./SecuritySection";
 import type { SettingsSection } from "./settingsSections";
+import { useActualizarPerfil, usePerfil } from "./useProfile";
 
 interface SettingsPanelProps {
 	email: string;
@@ -33,63 +37,38 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
 	const t = useTranslations("Settings");
 	const locale = useLocale();
-	const router = useRouter();
-	const [timezone, setTimezone] = useState(perfil.timezone);
-	const [idioma, setIdioma] = useState<"en" | "es">(perfil.locale);
+	const { data: perfilActual } = usePerfil(userId, perfil);
+	const [timezone, setTimezone] = useState(perfilActual.timezone);
+	const [idioma, setIdioma] = useState<"en" | "es">(perfilActual.locale);
 	const [guardando, setGuardando] = useState(false);
 	const [mensaje, setMensaje] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const [lista, setLista] = useState(dispositivos);
 	const [actualId, setActualId] = useState<string | null>(null);
 	const [editando, setEditando] = useState<string | null>(null);
 	const [nombreEditado, setNombreEditado] = useState("");
-	const [nombre, setNombre] = useState(perfil.displayName ?? "");
+	const [nombre, setNombre] = useState(perfilActual.displayName ?? "");
 	const [guardandoPerfil, setGuardandoPerfil] = useState(false);
 	const [perfilEstado, setPerfilEstado] = useState<{ tipo: "ok" | "error"; texto: string } | null>(
 		null,
 	);
-	const [cargandoDispositivos, setCargandoDispositivos] = useState(false);
+	const [errorDispositivos, setErrorDispositivos] = useState<string | null>(null);
+
+	const {
+		data: lista = [],
+		isLoading: cargandoDispositivos,
+		error: consultaDispositivosError,
+	} = useDispositivos(dispositivos, seccion === "devices");
+	const renombrarDispositivo = useRenombrarDispositivo();
+	const eliminarDispositivo = useEliminarDispositivo();
+	const actualizarPerfil = useActualizarPerfil(userId);
+
+	const errorDispositivosTexto =
+		errorDispositivos ??
+		(consultaDispositivosError instanceof Error ? consultaDispositivosError.message : null);
 
 	useEffect(() => {
 		setActualId(obtenerDeviceId());
 	}, []);
-
-	useEffect(() => {
-		if (seccion !== "devices") {
-			return;
-		}
-
-		let activo = true;
-		setCargandoDispositivos(true);
-		const supabase = createClient();
-
-		void supabase
-			.from("devices")
-			.select("id, name, platform, last_seen_at")
-			.order("last_seen_at", { ascending: false })
-			.then(({ data, error: fetchError }) => {
-				if (!activo) return;
-
-				if (fetchError) {
-					setError(fetchError.message);
-				} else if (data) {
-					setLista(
-						data.map((fila) => ({
-							id: fila.id,
-							nombre: fila.name,
-							plataforma: fila.platform,
-							ultimaConexion: fila.last_seen_at,
-						})),
-					);
-				}
-
-				setCargandoDispositivos(false);
-			});
-
-		return () => {
-			activo = false;
-		};
-	}, [seccion]);
 
 	const zonas = zonasHorarias(timezone);
 
@@ -105,19 +84,17 @@ export function SettingsPanel({
 		setGuardandoPerfil(true);
 		setPerfilEstado(null);
 
-		const supabase = createClient();
-		const { error: updateError } = await supabase
-			.from("profiles")
-			.update({ display_name: limpio || null })
-			.eq("id", userId);
-
-		if (updateError) {
-			setPerfilEstado({ tipo: "error", texto: updateError.message });
-		} else {
+		try {
+			await actualizarPerfil.mutateAsync({ displayName: limpio || null });
 			setPerfilEstado({ tipo: "ok", texto: t("profileSaved") });
+		} catch (cause: unknown) {
+			setPerfilEstado({
+				tipo: "error",
+				texto: cause instanceof Error ? cause.message : t("profileError"),
+			});
+		} finally {
+			setGuardandoPerfil(false);
 		}
-
-		setGuardandoPerfil(false);
 	}
 
 	async function guardarPreferencias() {
@@ -125,52 +102,36 @@ export function SettingsPanel({
 		setError(null);
 		setMensaje(null);
 
-		const supabase = createClient();
-		const { error: updateError } = await supabase
-			.from("profiles")
-			.update({ timezone, locale: idioma })
-			.eq("id", userId);
+		try {
+			await actualizarPerfil.mutateAsync({ timezone, locale: idioma });
+			setMensaje(t("saved"));
 
-		if (updateError) {
-			setError(updateError.message);
+			if (idioma !== locale) {
+				const ruta = getPathname({ locale: idioma, href: "/app/settings" });
+				window.location.assign(`${ruta}?tab=preferences`);
+			}
+		} catch (cause: unknown) {
+			setError(cause instanceof Error ? cause.message : t("profileError"));
+		} finally {
 			setGuardando(false);
-			return;
-		}
-
-		setMensaje(t("saved"));
-		setGuardando(false);
-
-		if (idioma !== locale) {
-			const ruta = getPathname({ locale: idioma, href: "/app/settings" });
-			window.location.assign(`${ruta}?tab=preferences`);
 		}
 	}
 
 	async function renombrar(id: string) {
-		const nombre = nombreEditado.trim();
+		const nombreLimpio = nombreEditado.trim();
 
-		if (!nombre) {
+		if (!nombreLimpio) {
 			return;
 		}
 
-		const supabase = createClient();
-		const { error: renameError } = await supabase
-			.from("devices")
-			.update({ name: nombre })
-			.eq("id", id);
+		setErrorDispositivos(null);
 
-		if (renameError) {
-			setError(renameError.message);
-			return;
+		try {
+			await renombrarDispositivo.mutateAsync({ id, nombre: nombreLimpio });
+			setEditando(null);
+		} catch (cause: unknown) {
+			setErrorDispositivos(cause instanceof Error ? cause.message : t("profileError"));
 		}
-
-		setLista((actual) =>
-			actual.map((dispositivo) =>
-				dispositivo.id === id ? { ...dispositivo, nombre } : dispositivo,
-			),
-		);
-		setEditando(null);
-		router.refresh();
 	}
 
 	async function eliminar(id: string) {
@@ -178,16 +139,13 @@ export function SettingsPanel({
 			return;
 		}
 
-		const supabase = createClient();
-		const { error: deleteError } = await supabase.from("devices").delete().eq("id", id);
+		setErrorDispositivos(null);
 
-		if (deleteError) {
-			setError(deleteError.message);
-			return;
+		try {
+			await eliminarDispositivo.mutateAsync(id);
+		} catch (cause: unknown) {
+			setErrorDispositivos(cause instanceof Error ? cause.message : t("profileError"));
 		}
-
-		setLista((actual) => actual.filter((dispositivo) => dispositivo.id !== id));
-		router.refresh();
 	}
 
 	return (
@@ -299,6 +257,12 @@ export function SettingsPanel({
 			{seccion === "devices" ? (
 				<section className="rounded-2xl border border-border bg-surface p-6">
 					<h2 className="text-sm font-medium text-foreground">{t("devices")}</h2>
+
+					{errorDispositivosTexto ? (
+						<p className="mt-4 rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-fg">
+							{errorDispositivosTexto}
+						</p>
+					) : null}
 
 					{cargandoDispositivos ? (
 						<p className="mt-4 text-sm text-muted">{t("loadingDevices")}</p>
