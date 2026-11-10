@@ -243,7 +243,10 @@
 		"signupSent": "Te enviamos un correo para confirmar la cuenta. Revisa tu bandeja de entrada.",
 		"recoverySent": "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.",
 		"expired": "El enlace expiró o no es válido.",
-		"requestAnother": "Solicitar otro enlace"
+		"requestAnother": "Solicitar otro enlace",
+		"loginError": "No se pudo iniciar sesión.",
+		"signupError": "No se pudo crear la cuenta.",
+		"resetError": "No se pudo actualizar la contraseña."
 	},
 	"Timer": {
 		"loading": "Cargando temporizador…",

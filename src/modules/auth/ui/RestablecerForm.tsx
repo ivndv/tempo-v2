@@ -4,7 +4,7 @@ import { KeyRound, LoaderCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { createClient } from "@/shared/infrastructure/supabase/client";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import { botonPrimario, campo, enlace } from "./styles";
 
 export function RestablecerForm() {
@@ -18,12 +18,11 @@ export function RestablecerForm() {
 
 	useEffect(() => {
 		let activo = true;
-		const supabase = createClient();
 
-		supabase.auth
-			.getUser()
-			.then(({ data }) => {
-				if (activo) setSesionValida(Boolean(data.user));
+		getClientContainer()
+			.auth.obtenerSesion()
+			.then((usuario) => {
+				if (activo) setSesionValida(Boolean(usuario));
 			})
 			.catch(() => {
 				if (activo) setSesionValida(false);
@@ -50,11 +49,10 @@ export function RestablecerForm() {
 		setError(null);
 		setCargando(true);
 
-		const supabase = createClient();
-		const { error: authError } = await supabase.auth.updateUser({ password });
+		const resultado = await getClientContainer().auth.restablecerPassword(password);
 
-		if (authError) {
-			setError(authError.message);
+		if (!resultado.ok) {
+			setError(resultado.error ?? t("resetError"));
 			setCargando(false);
 			return;
 		}

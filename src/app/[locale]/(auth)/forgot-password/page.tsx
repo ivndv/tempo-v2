@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { AuthShell } from "@/components/auth/AuthShell";
-import { RecuperarForm } from "@/components/auth/RecuperarForm";
+import { AuthShell } from "@/modules/auth/ui/AuthShell";
+import { RecuperarForm } from "@/modules/auth/ui/RecuperarForm";
 
 export default async function RecuperarPage({ params }: { params: Promise<{ locale: string }> }) {
 	const { locale } = await params;

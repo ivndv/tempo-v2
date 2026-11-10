@@ -244,7 +244,10 @@
 		"recoverySent": "If the email is registered, we sent you a link to reset your password.",
 		"expired": "This link expired or is invalid.",
 		"requestAnother": "Request another link",
-		"welcomeBack": "Welcome back"
+		"welcomeBack": "Welcome back",
+		"loginError": "Could not sign in.",
+		"signupError": "Could not create the account.",
+		"resetError": "Could not update the password."
 	},
 	"Timer": {
 		"loading": "Loading timer…",

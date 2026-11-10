@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { AuthShell } from "@/components/auth/AuthShell";
-import { RegistroForm } from "@/components/auth/RegistroForm";
 import { Link } from "@/i18n/navigation";
+import { AuthShell } from "@/modules/auth/ui/AuthShell";
+import { RegistroForm } from "@/modules/auth/ui/RegistroForm";
 
 export default async function RegistroPage({ params }: { params: Promise<{ locale: string }> }) {
 	const { locale } = await params;

@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { AuthShell } from "@/components/auth/AuthShell";
-import { LoginForm } from "@/components/auth/LoginForm";
 import { Link } from "@/i18n/navigation";
+import { AuthShell } from "@/modules/auth/ui/AuthShell";
+import { LoginForm } from "@/modules/auth/ui/LoginForm";
 
 export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
 	const { locale } = await params;

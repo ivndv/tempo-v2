@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { AuthShell } from "@/components/auth/AuthShell";
-import { RestablecerForm } from "@/components/auth/RestablecerForm";
+import { AuthShell } from "@/modules/auth/ui/AuthShell";
+import { RestablecerForm } from "@/modules/auth/ui/RestablecerForm";
 
 export default async function RestablecerPage({ params }: { params: Promise<{ locale: string }> }) {
 	const { locale } = await params;

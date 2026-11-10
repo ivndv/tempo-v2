@@ -4,7 +4,7 @@ import { LoaderCircle, Mail } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { createClient } from "@/shared/infrastructure/supabase/client";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import { botonPrimario, campo, enlace } from "./styles";
 import { Turnstile } from "./Turnstile";
 
@@ -31,14 +31,14 @@ export function RecuperarForm() {
 		setMensaje(null);
 		setCargando(true);
 
-		const supabase = createClient();
-		const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-			redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(resetPath)}`,
-			captchaToken: token,
-		});
+		const resultado = await getClientContainer().auth.solicitarRecuperacion(
+			email,
+			`${window.location.origin}/auth/callback?next=${encodeURIComponent(resetPath)}`,
+			token,
+		);
 
-		if (authError && /captcha/i.test(authError.message)) {
-			setError(authError.message);
+		if (resultado.error && /captcha/i.test(resultado.error)) {
+			setError(resultado.error);
 			setResetSignal((valor) => valor + 1);
 			setCargando(false);
 			return;

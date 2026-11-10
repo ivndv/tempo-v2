@@ -1,28 +1,35 @@
 "use client";
 
-import { LoaderCircle, LogIn } from "lucide-react";
+import { LoaderCircle, UserPlus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { createClient } from "@/shared/infrastructure/supabase/client";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import { botonPrimario, botonSecundario, campo, enlace } from "./styles";
 import { Turnstile } from "./Turnstile";
 
-export function LoginForm() {
+export function RegistroForm() {
 	const t = useTranslations("Auth");
 	const locale = useLocale();
 	const router = useRouter();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [confirmacion, setConfirmacion] = useState("");
 	const [token, setToken] = useState("");
 	const [resetSignal, setResetSignal] = useState(0);
 	const [error, setError] = useState<string | null>(null);
+	const [mensaje, setMensaje] = useState<string | null>(null);
 	const [cargando, setCargando] = useState(false);
 	const googleHabilitado = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 	const appPath = locale === "es" ? "/es/app" : "/app";
 
-	async function iniciarSesion(event: FormEvent<HTMLFormElement>) {
+	async function registrar(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
+
+		if (password !== confirmacion) {
+			setError(t("passwordsMismatch"));
+			return;
+		}
 
 		if (!token) {
 			setError(t("captchaRequired"));
@@ -30,24 +37,31 @@ export function LoginForm() {
 		}
 
 		setError(null);
+		setMensaje(null);
 		setCargando(true);
 
-		const supabase = createClient();
-		const { error: authError } = await supabase.auth.signInWithPassword({
+		const resultado = await getClientContainer().auth.registrar({
 			email,
 			password,
-			options: { captchaToken: token },
+			captchaToken: token,
+			redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(appPath)}`,
 		});
 
-		if (authError) {
-			setError(authError.message);
+		if (!resultado.ok) {
+			setError(resultado.error ?? t("signupError"));
 			setResetSignal((valor) => valor + 1);
 			setCargando(false);
 			return;
 		}
 
-		router.replace("/app");
-		router.refresh();
+		if (!resultado.requiereVerificacion) {
+			router.replace("/app");
+			router.refresh();
+			return;
+		}
+
+		setMensaje(t("signupSent"));
+		setCargando(false);
 	}
 
 	async function iniciarConGoogle() {
@@ -57,22 +71,18 @@ export function LoginForm() {
 		}
 
 		setError(null);
-		const supabase = createClient();
-		const { error: authError } = await supabase.auth.signInWithOAuth({
-			provider: "google",
-			options: {
-				redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(appPath)}`,
-			},
-		});
+		const resultado = await getClientContainer().auth.iniciarConGoogle(
+			`${window.location.origin}/auth/callback?next=${encodeURIComponent(appPath)}`,
+		);
 
-		if (authError) {
-			setError(authError.message);
+		if (!resultado.ok) {
+			setError(resultado.error ?? t("signupError"));
 		}
 	}
 
 	return (
 		<div className="space-y-6">
-			<form onSubmit={iniciarSesion} className="space-y-4">
+			<form onSubmit={registrar} className="space-y-4">
 				<label htmlFor="email" className="block space-y-1.5 text-sm">
 					<span className="text-foreground">{t("email")}</span>
 					<input
@@ -96,19 +106,29 @@ export function LoginForm() {
 						type="password"
 						required
 						minLength={8}
-						autoComplete="current-password"
-						placeholder={t("passwordPlaceholder")}
+						autoComplete="new-password"
+						placeholder={t("newPasswordPlaceholder")}
 						className={campo}
 						value={password}
 						onChange={(event) => setPassword(event.target.value)}
 					/>
 				</label>
 
-				<div className="flex justify-end">
-					<Link href="/forgot-password" className={`text-xs ${enlace}`}>
-						{t("forgotLink")}
-					</Link>
-				</div>
+				<label htmlFor="confirmPassword" className="block space-y-1.5 text-sm">
+					<span className="text-foreground">{t("confirmPassword")}</span>
+					<input
+						id="confirmPassword"
+						name="confirmPassword"
+						type="password"
+						required
+						minLength={8}
+						autoComplete="new-password"
+						placeholder={t("confirmPlaceholder")}
+						className={campo}
+						value={confirmacion}
+						onChange={(event) => setConfirmacion(event.target.value)}
+					/>
+				</label>
 
 				<Turnstile onToken={setToken} resetSignal={resetSignal} />
 
@@ -121,16 +141,22 @@ export function LoginForm() {
 					</p>
 				) : null}
 
+				{mensaje ? (
+					<p className="rounded-lg border border-success-border bg-success-bg px-3 py-2 text-sm text-success-fg">
+						{mensaje}
+					</p>
+				) : null}
+
 				<button type="submit" disabled={cargando || !token} className={`${botonPrimario} w-full`}>
 					{cargando ? (
 						<>
 							<LoaderCircle size={16} className="animate-spin" aria-hidden />
-							{t("loggingIn")}
+							{t("signingUp")}
 						</>
 					) : (
 						<>
-							<LogIn size={16} aria-hidden />
-							{t("login")}
+							<UserPlus size={16} aria-hidden />
+							{t("signup")}
 						</>
 					)}
 				</button>
@@ -153,8 +179,8 @@ export function LoginForm() {
 			</button>
 
 			<p className="text-center text-sm text-muted">
-				<Link href="/signup" className={enlace}>
-					{t("signup")}
+				<Link href="/login" className={enlace}>
+					{t("login")}
 				</Link>
 			</p>
 		</div>
