@@ -1,5 +1,3 @@
-# Tempo CI/CD: lint, tipos y tests en paralelo; build y deploy a Cloudflare
-# solo en push a main.
 name: Tempo CI/CD
 
 on:
@@ -7,22 +5,15 @@ on:
     branches:
       - main
       - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+  workflow_dispatch:
 
-# Cancela ejecuciones previas del mismo ref para no gastar minutos de CI
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Permisos mínimos: solo lectura del repositorio
 permissions:
   contents: read
 
-# Variables públicas requeridas en tiempo de build (no son secretos).
-# Se configuran en Settings > Secrets and variables > Actions > Variables.
 env:
   NEXT_TELEMETRY_DISABLED: "1"
   NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
@@ -32,7 +23,7 @@ env:
   NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: ${{ vars.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED }}
 
 jobs:
-  # Job 1: lint y verificación de formato con Biome
+  # 1. Lint y formato
   lint:
     name: Biome
     runs-on: ubuntu-latest
@@ -47,7 +38,7 @@ jobs:
       - name: Biome CI
         run: bunx biome ci .
 
-  # Job 2: verificación de tipos con TypeScript
+  # 2. Typecheck
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
@@ -62,9 +53,9 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-  # Job 3: pruebas unitarias con Vitest
+  # 3. Tests unitarios
   test:
-    name: Tests
+    name: Unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -74,11 +65,75 @@ jobs:
       - name: Setup Bun env
         uses: ./.github/actions/setup
 
-      - name: Run tests
-        run: bun run test
+      - name: Run unit tests
+        run: bun run test:unit
 
-  # Job 4: build y despliegue en Cloudflare (solo push a main).
-  # Requiere los secrets CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID.
+  # 4. Integración + E2E
+  #    Supabase efímero en el runner. Solo develop o manual.
+  integration:
+    name: Integration + E2E (Supabase efímero)
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: "false"
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun env
+        uses: ./.github/actions/setup
+
+      # No usa tu Supabase local, staging ni producción.
+      - name: Start ephemeral Supabase
+        run: >-
+          bunx supabase start
+          -x realtime,storage-api,imgproxy,studio,edge-runtime,logflare,vector,supavisor,postgres-meta
+
+      - name: Export ephemeral Supabase env
+        shell: bash
+        run: |
+          eval "$(bunx supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | sed 's/^/export /')"
+          echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+          test -n "$SERVICE_ROLE_KEY"
+
+      - name: Reset ephemeral database from migrations
+        run: bunx supabase db reset
+
+      - name: Run integration tests
+        run: bun run test:integration
+
+      - name: Build app for E2E
+        run: bun run build
+
+      # Cachea binarios de Chromium, no paquetes de Bun.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: bun run test:e2e
+
+      - name: Stop ephemeral Supabase
+        if: always()
+        run: bunx supabase stop --no-backup
+
+  # 5. Deploy a Cloudflare
+  #    Solo push a main. Requiere CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID.
   deploy:
     name: Deploy to Cloudflare
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -101,8 +156,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-  # ---------------------------------------------------------------------------
-  # Escaneo de secretos. Workflow reutilizable definido en ivndv/.github
-  # ---------------------------------------------------------------------------
+  # 6. Escaneo de secretos
   gitleaks:
     uses: ivndv/.github/.github/workflows/gitleaks.yml@main
