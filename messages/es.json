@@ -106,8 +106,9 @@
 		"proFeature1": "Todo lo del plan Gratis",
 		"proFeature2": "Todos tus dispositivos, con rangos de 90 días, un año y all-time",
 		"proFeature3": "Rachas, récords y comparación de periodos",
-		"comingSoon": "Próximamente",
-		"activate": "Próximamente",
+		"activate": "Pasar a Pro",
+		"manageSubscription": "Gestionar suscripción",
+		"loginToUpgrade": "Entra para pasar a Pro",
 		"note": "Pagos procesados por Polar como Merchant of Record, en USD. Impuestos calculados al pagar.",
 		"faqTitle": "Preguntas frecuentes",
 		"faq1Question": "¿Necesito una cuenta para usar Tempo?",
@@ -118,8 +119,7 @@
 		"faq3Answer": "Vuelves al plan Gratis al terminar el periodo pagado y conservas tu historial y tus tareas.",
 		"metaTitle": "Precios — Tempo",
 		"metaDescription": "Planes Gratis y Pro de Tempo.",
-		"proFeature4": "Exportación CSV avanzada",
-		"proAnnual": "o $50 USD / año (2 meses gratis)"
+		"proFeature4": "Exportación CSV avanzada"
 	},
 	"Legal": {
 		"label": "Legal",
@@ -404,6 +404,28 @@
 		"taskCompletion": "Completadas",
 		"taskLastWorked": "Último trabajo"
 	},
+	"Billing": {
+		"title": "Suscripción",
+		"free": "Plan Gratis",
+		"freeDescription": "Pasa a Pro para desbloquear todos los rangos y dispositivos.",
+		"pro": "Pro",
+		"manage": "Gestionar suscripción",
+		"upgrade": "Pasar a Pro",
+		"renews": "Se renueva el {date}",
+		"cancels": "Se cancela el {date}",
+		"active": "Activa",
+		"trialing": "Prueba",
+		"canceled": "Cancelada",
+		"past_due": "El pago falló. Actualiza tu método de pago para conservar Pro.",
+		"paused": "Pausada",
+		"incomplete": "Pago pendiente",
+		"incomplete_expired": "Vencida",
+		"unpaid": "Sin pagar",
+		"processing": "Estamos procesando tu pago. Puede tardar unos segundos.",
+		"success": "Pago recibido. Tu plan Pro está activo.",
+		"status": "Estado",
+		"noSubscription": "No tienes una suscripción activa."
+	},
 	"Storage": {
 		"warning": "El navegador no garantiza conservar tus datos locales. Si borras los datos del sitio o se queda sin espacio, podrías perder lo que aún no se haya sincronizado.",
 		"dismiss": "Ocultar aviso"
@@ -449,6 +471,7 @@
 		"tabsProfile": "Perfil",
 		"tabsPreferences": "Preferencias",
 		"tabsDevices": "Dispositivos",
+		"tabsBilling": "Facturación",
 		"tabsExport": "Exportar",
 		"exportTitle": "Exporta tus datos",
 		"exportSubtitle": "Descarga una copia de tus tareas, pomodoros y breaks.",

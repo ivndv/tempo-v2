@@ -5,7 +5,8 @@ import { ObtenerDashboard } from "@/modules/analytics/application/ObtenerDashboa
 import { SupabaseDashboardRepository } from "@/modules/analytics/infrastructure/SupabaseDashboardRepository";
 import { SupabaseAuthAdapter } from "@/modules/auth/infrastructure/SupabaseAuthAdapter";
 import { ObtenerPlan } from "@/modules/billing/application/ObtenerPlan";
-import { SupabasePlanRepository } from "@/modules/billing/infrastructure/SupabasePlanRepository";
+import { ObtenerSuscripcion } from "@/modules/billing/application/ObtenerSuscripcion";
+import { SupabaseSuscripcionRepository } from "@/modules/billing/infrastructure/SupabaseSuscripcionRepository";
 import { ListarDispositivos } from "@/modules/devices/application/ListarDispositivos";
 import { SupabaseDispositivoRepository } from "@/modules/devices/infrastructure/SupabaseDispositivoRepository";
 import { ObtenerPerfil } from "@/modules/profile/application/ObtenerPerfil";
@@ -23,6 +24,7 @@ export const getServerContainer = cache(async () => {
 	const supabase = await createClient();
 	const tareasRepository = new SupabaseTareaRepository(supabase);
 	const dashboardRepository = new SupabaseDashboardRepository(supabase);
+	const suscripcionRepository = new SupabaseSuscripcionRepository(supabase);
 
 	return {
 		supabase,
@@ -34,7 +36,8 @@ export const getServerContainer = cache(async () => {
 			listar: new ListarDispositivos(new SupabaseDispositivoRepository(supabase)),
 		},
 		billing: {
-			plan: new ObtenerPlan(new SupabasePlanRepository(supabase)),
+			plan: new ObtenerPlan(suscripcionRepository),
+			suscripcion: new ObtenerSuscripcion(suscripcionRepository),
 		},
 		analytics: {
 			dashboard: new ObtenerDashboard(dashboardRepository),

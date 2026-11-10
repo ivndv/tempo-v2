@@ -1,5 +1,6 @@
 import { strToU8, zipSync } from "fflate";
 import { type NextRequest, NextResponse } from "next/server";
+import { esPlanProActivo } from "@/modules/billing/domain/planPolicy";
 import { createClient } from "@/shared/infrastructure/supabase/server";
 import { leerTodas } from "../rows";
 
@@ -63,18 +64,6 @@ function aCsv(filas: Record<string, unknown>[], columnas: string[]): string {
 	return [encabezado, ...cuerpo].join("\n");
 }
 
-function esPro(plan: string | null, status: string | null, fin: string | null): boolean {
-	if (plan !== "pro" || !status) {
-		return false;
-	}
-
-	if (!["active", "trialing", "canceled"].includes(status)) {
-		return false;
-	}
-
-	return !fin || new Date(fin).getTime() > Date.now();
-}
-
 export async function GET(_request: NextRequest) {
 	const supabase = await createClient();
 	const {
@@ -94,13 +83,13 @@ export async function GET(_request: NextRequest) {
 		return NextResponse.json({ error: errorPlan.message }, { status: 500 });
 	}
 
-	if (
-		!esPro(
-			suscripcion?.plan ?? null,
-			suscripcion?.status ?? null,
-			suscripcion?.current_period_end ?? null,
-		)
-	) {
+	const planActivo = esPlanProActivo({
+		plan: suscripcion?.plan ?? null,
+		status: suscripcion?.status ?? null,
+		currentPeriodEnd: suscripcion?.current_period_end ?? null,
+	});
+
+	if (!planActivo) {
 		return NextResponse.json({ error: "Se requiere plan Pro" }, { status: 403 });
 	}
 

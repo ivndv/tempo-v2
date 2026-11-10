@@ -106,8 +106,9 @@
 		"proFeature1": "Everything in Free",
 		"proFeature2": "All your devices, with 90-day, yearly and all-time ranges",
 		"proFeature3": "Streaks, records and period comparisons",
-		"comingSoon": "Coming soon",
-		"activate": "Coming soon",
+		"activate": "Upgrade to Pro",
+		"manageSubscription": "Manage subscription",
+		"loginToUpgrade": "Log in to upgrade",
 		"note": "Payments processed by Polar as Merchant of Record, in USD. Taxes calculated at checkout.",
 		"faqTitle": "Frequently asked questions",
 		"faq1Question": "Do I need an account to use Tempo?",
@@ -118,8 +119,7 @@
 		"faq3Answer": "You go back to the Free plan when the paid period ends and keep your history and tasks.",
 		"metaTitle": "Pricing — Tempo",
 		"metaDescription": "Free and Pro plans for Tempo.",
-		"proFeature4": "Advanced CSV export",
-		"proAnnual": "or $50 USD / year (2 months free)"
+		"proFeature4": "Advanced CSV export"
 	},
 	"Legal": {
 		"label": "Legal",
@@ -405,6 +405,28 @@
 		"taskCompletion": "Completed",
 		"taskLastWorked": "Last worked"
 	},
+	"Billing": {
+		"title": "Subscription",
+		"free": "Free plan",
+		"freeDescription": "Upgrade to Pro to unlock all ranges and devices.",
+		"pro": "Pro",
+		"manage": "Manage subscription",
+		"upgrade": "Upgrade to Pro",
+		"renews": "Renews on {date}",
+		"cancels": "Cancels on {date}",
+		"active": "Active",
+		"trialing": "Trial",
+		"canceled": "Canceled",
+		"past_due": "Payment failed. Update your payment method to keep Pro.",
+		"paused": "Paused",
+		"incomplete": "Payment pending",
+		"incomplete_expired": "Expired",
+		"unpaid": "Unpaid",
+		"processing": "We are processing your payment. This can take a few seconds.",
+		"success": "Payment received. Your Pro plan is active.",
+		"status": "Status",
+		"noSubscription": "You do not have an active subscription."
+	},
 	"Storage": {
 		"warning": "Your browser may not keep local data. If you clear site data or run out of space, you could lose anything that has not synced yet.",
 		"dismiss": "Dismiss notice"
@@ -450,6 +472,7 @@
 		"tabsProfile": "Profile",
 		"tabsPreferences": "Preferences",
 		"tabsDevices": "Devices",
+		"tabsBilling": "Billing",
 		"tabsExport": "Export",
 		"exportTitle": "Export your data",
 		"exportSubtitle": "Download a copy of your tasks, pomodoros and breaks.",

@@ -1,10 +1,11 @@
-import type { PlanRepository } from "../domain/PlanRepository";
 import type { Plan } from "../domain/plan";
+import type { SuscripcionRepository } from "../domain/suscripcion";
 
 export class ObtenerPlan {
-	constructor(private readonly planes: PlanRepository) {}
+	constructor(private readonly suscripciones: SuscripcionRepository) {}
 
-	execute(): Promise<Plan> {
-		return this.planes.obtener();
+	async execute(): Promise<Plan> {
+		const suscripcion = await this.suscripciones.obtener();
+		return suscripcion.plan;
 	}
 }

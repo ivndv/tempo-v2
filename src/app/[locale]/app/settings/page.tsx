@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import type { Plan } from "@/modules/billing/domain/plan";
+import { SUSCRIPCION_VACIA } from "@/modules/billing/domain/suscripcion";
 import type { Dispositivo } from "@/modules/devices/domain/dispositivo";
 import { GuestSettingsPanel } from "@/modules/profile/ui/GuestSettingsPanel";
 import { SettingsPanel } from "@/modules/profile/ui/SettingsPanel";
@@ -18,6 +18,7 @@ const SECCIONES_CON_SESION: SettingsSection[] = [
 	"profile",
 	"preferences",
 	"devices",
+	"billing",
 	"security",
 	"export",
 ];
@@ -40,11 +41,12 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
 
 	const contenedor = user ? await getServerContainer() : null;
 
-	// Plan y perfil son independientes: se piden en paralelo.
-	const [plan, perfil] = await Promise.all([
-		contenedor ? contenedor.billing.plan.execute() : Promise.resolve<Plan>("free"),
+	// Suscripción y perfil son independientes: se piden en paralelo.
+	const [suscripcion, perfil] = await Promise.all([
+		contenedor ? contenedor.billing.suscripcion.execute() : Promise.resolve(SUSCRIPCION_VACIA),
 		user ? getPerfilActual() : Promise.resolve(null),
 	]);
+	const plan = suscripcion.plan;
 
 	let dispositivos: Dispositivo[] = [];
 
@@ -57,6 +59,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
 				{ key: "profile", label: t("tabsProfile") },
 				{ key: "preferences", label: t("tabsPreferences") },
 				{ key: "devices", label: t("tabsDevices") },
+				{ key: "billing", label: t("tabsBilling") },
 				{ key: "security", label: t("tabsSecurity") },
 				{ key: "export", label: t("tabsExport") },
 			]
@@ -88,6 +91,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
 					dispositivos={dispositivos}
 					seccion={seccion}
 					plan={plan}
+					suscripcion={suscripcion}
 				/>
 			) : (
 				<GuestSettingsPanel seccion={seccion} />

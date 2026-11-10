@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { alternatesDe } from "@/i18n/seo";
+import { getServerContainer } from "@/shared/infrastructure/container";
+import { getUsuarioActual } from "@/shared/infrastructure/getUsuarioActual";
 
 export async function generateMetadata({
 	params,
@@ -23,6 +25,12 @@ export default async function PreciosPage({ params }: { params: Promise<{ locale
 	const { locale } = await params;
 	setRequestLocale(locale);
 	const t = await getTranslations("Pricing");
+	const user = await getUsuarioActual();
+	const contenedor = user ? await getServerContainer() : null;
+	const suscripcion = contenedor ? await contenedor.billing.suscripcion.execute() : null;
+	const esPro = suscripcion?.plan === "pro";
+	const rutaLogin = locale === "en" ? "/login" : `/${locale}/login`;
+	const rutaPricing = locale === "en" ? "/pricing" : `/${locale}/pricing`;
 
 	const gratis = [t("freeFeature1"), t("freeFeature2"), t("freeFeature3"), t("freeFeature4")];
 
@@ -71,15 +79,10 @@ export default async function PreciosPage({ params }: { params: Promise<{ locale
 				</article>
 
 				<article className="relative flex flex-col rounded-2xl border border-success-border bg-success-bg p-6">
-					<span className="absolute right-4 top-4 rounded-full border border-success-border px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-primary">
-						{t("comingSoon")}
-					</span>
-
 					<h2 className="text-sm font-medium text-primary">{t("pro")}</h2>
 					<p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
 						{t("proPrice")} <span className="text-sm font-normal text-muted">{t("proPeriod")}</span>
 					</p>
-					<p className="mt-1 text-xs text-muted">{t("proAnnual")}</p>
 					<p className="mt-2 text-sm text-success-fg">{t("proDescription")}</p>
 
 					<ul className="mt-6 flex-1 space-y-2.5 text-sm text-foreground">
@@ -91,13 +94,28 @@ export default async function PreciosPage({ params }: { params: Promise<{ locale
 						))}
 					</ul>
 
-					<button
-						type="button"
-						disabled
-						className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-60"
-					>
-						{t("activate")}
-					</button>
+					{!user ? (
+						<a
+							href={`${rutaLogin}?next=${encodeURIComponent(rutaPricing)}`}
+							className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover"
+						>
+							{t("loginToUpgrade")}
+						</a>
+					) : esPro ? (
+						<a
+							href="/api/billing/portal"
+							className="mt-6 inline-flex items-center justify-center rounded-lg border border-success-border bg-surface px-4 py-2 text-sm font-medium text-primary transition hover:border-primary"
+						>
+							{t("manageSubscription")}
+						</a>
+					) : (
+						<a
+							href="/api/billing/checkout"
+							className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover"
+						>
+							{t("activate")}
+						</a>
+					)}
 				</article>
 			</section>
 

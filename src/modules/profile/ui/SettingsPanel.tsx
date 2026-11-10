@@ -4,6 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useState } from "react";
 import { getPathname } from "@/i18n/navigation";
 import type { Plan } from "@/modules/billing/domain/plan";
+import type { SuscripcionResumen } from "@/modules/billing/domain/suscripcion";
+import { BillingSection } from "@/modules/billing/ui/BillingSection";
 import type { Dispositivo } from "@/modules/devices/domain/dispositivo";
 import {
 	useDispositivos,
@@ -25,6 +27,7 @@ interface SettingsPanelProps {
 	dispositivos: Dispositivo[];
 	seccion: SettingsSection;
 	plan: Plan;
+	suscripcion: SuscripcionResumen;
 }
 
 export function SettingsPanel({
@@ -34,6 +37,7 @@ export function SettingsPanel({
 	dispositivos,
 	seccion,
 	plan,
+	suscripcion,
 }: SettingsPanelProps) {
 	const t = useTranslations("Settings");
 	const locale = useLocale();
@@ -349,6 +353,8 @@ export function SettingsPanel({
 			) : null}
 
 			{seccion === "security" ? <SecuritySection email={email} /> : null}
+
+			{seccion === "billing" ? <BillingSection suscripcion={suscripcion} /> : null}
 
 			{seccion === "export" ? <ExportSection guest={false} plan={plan} /> : null}
 		</div>
