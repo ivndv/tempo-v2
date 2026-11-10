@@ -8,7 +8,7 @@ import { getServerContainer } from "@/shared/infrastructure/container";
 import { getPerfilActual } from "@/shared/infrastructure/getPerfilActual";
 import { getUsuarioActual } from "@/shared/infrastructure/getUsuarioActual";
 
-const RANGOS_PRO = [7, 30, 90, 365, 0];
+const RANGOS_PRO = [7, 30, 90, 365, 730, 0];
 const RANGOS_FREE = [7, 30];
 
 interface DashboardPageProps {
@@ -42,6 +42,7 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
 
 	let datosPro: DashboardResumen | null = null;
 	let offline = false;
+	let devicesUnavailable = false;
 
 	if (contenedor && plan === "pro") {
 		// Ambos dependen del plan, pero no entre sí: se piden en paralelo.
@@ -50,14 +51,19 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
 			contenedor.analytics.dashboard.execute({ dias: rango, deviceId }),
 		]);
 
-		if (resDispositivos.status === "rejected" || resDatos.status === "rejected") {
-			offline = true;
-		} else {
+		if (resDispositivos.status === "fulfilled") {
 			dispositivos = resDispositivos.value.map((dispositivo) => ({
 				id: dispositivo.id,
 				nombre: dispositivo.nombre,
 			}));
+		} else {
+			devicesUnavailable = true;
+		}
+
+		if (resDatos.status === "fulfilled") {
 			datosPro = resDatos.value;
+		} else {
+			offline = true;
 		}
 	}
 
@@ -77,11 +83,18 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
 				</Link>
 			</div>
 
-			{datosPro ? (
+			{devicesUnavailable ? (
+				<p className="rounded-xl border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-fg">
+					{t("devicesUnavailable")}
+				</p>
+			) : null}
+
+			{datosPro && user ? (
 				<DashboardPro
-					datos={datosPro}
-					rango={rango}
-					deviceId={deviceId}
+					userId={user.id}
+					datosIniciales={datosPro}
+					rangoInicial={rango}
+					deviceInicial={deviceId}
 					dispositivos={dispositivos}
 				/>
 			) : (

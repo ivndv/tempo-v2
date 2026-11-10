@@ -1,55 +1,106 @@
-import { getLocale, getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
-import type { DashboardResumen, PeriodoResumen } from "../domain/dashboard";
+"use client";
 
-const RANGOS = [7, 30, 90, 365, 0] as const;
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import type { DashboardResumen, GranularidadDashboard, PeriodoResumen } from "../domain/dashboard";
+import { DeviceFocusChart } from "./DeviceFocusChart";
+import { FocusCalendar } from "./FocusCalendar";
+import { useDashboard } from "./useDashboard";
+import { WeeklyFocusChart } from "./WeeklyFocusChart";
+
+const RANGOS = [7, 30, 90, 365, 730, 0] as const;
 
 interface DashboardProProps {
-	datos: DashboardResumen;
-	rango: number;
-	deviceId: string | null;
+	userId: string;
+	datosIniciales: DashboardResumen;
+	rangoInicial: number;
+	deviceInicial: string | null;
 	dispositivos: { id: string; nombre: string }[];
 }
 
-export async function DashboardPro({ datos, rango, deviceId, dispositivos }: DashboardProProps) {
-	const t = await getTranslations("Dashboard");
-	const locale = await getLocale();
+export function DashboardPro({
+	userId,
+	datosIniciales,
+	rangoInicial,
+	deviceInicial,
+	dispositivos,
+}: DashboardProProps) {
+	const t = useTranslations("Dashboard");
+	const locale = useLocale();
+	const [rango, setRango] = useState(rangoInicial);
+	const [deviceId, setDeviceId] = useState(deviceInicial);
 
-	const serie = rango > 0 ? datos.daily.slice(-rango) : datos.daily;
+	const initialData =
+		rango === rangoInicial && deviceId === deviceInicial ? datosIniciales : undefined;
+	const { data, isFetching, isError, error, refetch } = useDashboard({
+		userId,
+		range: rango,
+		deviceId,
+		initialData,
+	});
+	const datos = data ?? datosIniciales;
+
+	useEffect(() => {
+		function alVolver() {
+			const params = new URLSearchParams(window.location.search);
+			const bruto = Number(params.get("range") ?? "30");
+			const permitido = RANGOS.some((opcion) => opcion === bruto);
+			setRango(permitido ? bruto : 30);
+			setDeviceId(params.get("device"));
+		}
+
+		window.addEventListener("popstate", alVolver);
+		return () => window.removeEventListener("popstate", alVolver);
+	}, []);
+
+	function actualizarUrl(nextRango: number, nextDevice: string | null) {
+		const params = new URLSearchParams(window.location.search);
+		params.set("range", String(nextRango));
+
+		if (nextDevice) {
+			params.set("device", nextDevice);
+		} else {
+			params.delete("device");
+		}
+
+		const query = params.toString();
+		window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+	}
+
+	function cambiarRango(nextRango: number) {
+		setRango(nextRango);
+		actualizarUrl(nextRango, deviceId);
+	}
+
+	function cambiarDispositivo(nextDevice: string | null) {
+		setDeviceId(nextDevice);
+		actualizarUrl(rango, nextDevice);
+	}
+
+	const serie = datos.daily;
 	const maximo = Math.max(...serie.map((dia) => dia.focusMinutes), 60);
 	const previo = datos.previousWeek.focusMinutes;
 	const variacion =
 		previo > 0 ? Math.round(((datos.week.focusMinutes - previo) / previo) * 100) : null;
-
-	function hrefRango(opcion: number) {
-		return {
-			pathname: "/app/dashboard" as const,
-			query: {
-				range: String(opcion),
-				...(deviceId ? { device: deviceId } : {}),
-			},
-		};
-	}
-
-	function hrefDispositivo(opcion: string | null) {
-		return {
-			pathname: "/app/dashboard" as const,
-			query: {
-				range: String(rango),
-				...(opcion ? { device: opcion } : {}),
-			},
-		};
-	}
+	const rangoLabel = rango === 0 ? t("rangeAll") : t(`range${rango}`);
+	const granularidadLabel =
+		datos.granularity === "month"
+			? t("granularityMonth")
+			: datos.granularity === "week"
+				? t("granularityWeek")
+				: t("granularityDay");
+	const errorTexto = error instanceof Error ? error.message : t("loadError");
 
 	return (
 		<div className="space-y-6">
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div className="flex flex-wrap gap-1.5">
 					{RANGOS.map((opcion) => (
-						<Link
+						<button
 							key={opcion}
-							href={hrefRango(opcion)}
-							aria-current={rango === opcion ? "page" : undefined}
+							type="button"
+							onClick={() => cambiarRango(opcion)}
+							aria-pressed={rango === opcion}
 							className={`rounded-lg px-3 py-1.5 text-xs transition ${
 								rango === opcion
 									? "bg-primary text-primary-foreground"
@@ -57,15 +108,16 @@ export async function DashboardPro({ datos, rango, deviceId, dispositivos }: Das
 							}`}
 						>
 							{opcion === 0 ? t("rangeAll") : t(`range${opcion}`)}
-						</Link>
+						</button>
 					))}
 				</div>
 
 				{dispositivos.length > 0 ? (
 					<div className="flex flex-wrap gap-1.5">
-						<Link
-							href={hrefDispositivo(null)}
-							aria-current={deviceId === null ? "page" : undefined}
+						<button
+							type="button"
+							onClick={() => cambiarDispositivo(null)}
+							aria-pressed={deviceId === null}
 							className={`rounded-lg px-3 py-1.5 text-xs transition ${
 								deviceId === null
 									? "border border-success-border bg-success-bg text-success-fg"
@@ -73,12 +125,13 @@ export async function DashboardPro({ datos, rango, deviceId, dispositivos }: Das
 							}`}
 						>
 							{t("allDevices")}
-						</Link>
+						</button>
 						{dispositivos.map((dispositivo) => (
-							<Link
+							<button
 								key={dispositivo.id}
-								href={hrefDispositivo(dispositivo.id)}
-								aria-current={deviceId === dispositivo.id ? "page" : undefined}
+								type="button"
+								onClick={() => cambiarDispositivo(dispositivo.id)}
+								aria-pressed={deviceId === dispositivo.id}
 								className={`max-w-40 truncate rounded-lg px-3 py-1.5 text-xs transition ${
 									deviceId === dispositivo.id
 										? "border border-success-border bg-success-bg text-success-fg"
@@ -86,17 +139,61 @@ export async function DashboardPro({ datos, rango, deviceId, dispositivos }: Das
 								}`}
 							>
 								{dispositivo.nombre}
-							</Link>
+							</button>
 						))}
 					</div>
 				) : null}
+
+				{isFetching ? <span className="text-xs text-muted">{t("updating")}</span> : null}
 			</div>
 
+			{isError ? (
+				<div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger-fg">
+					<p>{errorTexto}</p>
+					<button
+						type="button"
+						onClick={() => void refetch()}
+						className="rounded-lg border border-danger-border px-3 py-1.5 text-xs font-medium transition hover:bg-danger-bg/60"
+					>
+						{t("retry")}
+					</button>
+				</div>
+			) : null}
+
 			<section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-				<PeriodoCard titulo={t("today")} periodo={datos.today} t={t} />
-				<PeriodoCard titulo={t("last7")} periodo={datos.week} t={t} />
-				<PeriodoCard titulo={t("month")} periodo={datos.month} t={t} />
-				<PeriodoCard titulo={t("allTime")} periodo={datos.allTime} t={t} destacado />
+				<PeriodoCard
+					titulo={t("today")}
+					periodo={datos.today}
+					detalle={t("count", {
+						completed: datos.today.completed,
+						interrupted: datos.today.interrupted,
+					})}
+				/>
+				<PeriodoCard
+					titulo={t("last7")}
+					periodo={datos.week}
+					detalle={t("count", {
+						completed: datos.week.completed,
+						interrupted: datos.week.interrupted,
+					})}
+				/>
+				<PeriodoCard
+					titulo={t("month")}
+					periodo={datos.month}
+					detalle={t("count", {
+						completed: datos.month.completed,
+						interrupted: datos.month.interrupted,
+					})}
+				/>
+				<PeriodoCard
+					titulo={t("allTime")}
+					periodo={datos.allTime}
+					detalle={t("count", {
+						completed: datos.allTime.completed,
+						interrupted: datos.allTime.interrupted,
+					})}
+					destacado
+				/>
 			</section>
 
 			<section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -141,9 +238,9 @@ export async function DashboardPro({ datos, rango, deviceId, dispositivos }: Das
 
 			<section className="rounded-2xl border border-border bg-surface p-6">
 				<div className="flex items-baseline justify-between gap-4">
-					<h2 className="text-sm font-medium text-foreground">{t("focusPerDay")}</h2>
+					<h2 className="text-sm font-medium text-foreground">{t("focusOverTime")}</h2>
 					<p className="text-xs text-muted">
-						{rango === 0 ? t("rangeAll") : t(`range${rango}`)} ·{" "}
+						{rangoLabel} · {granularidadLabel} ·{" "}
 						{deviceId
 							? (dispositivos.find((dispositivo) => dispositivo.id === deviceId)?.nombre ??
 								deviceId.slice(0, 8))
@@ -156,11 +253,14 @@ export async function DashboardPro({ datos, rango, deviceId, dispositivos }: Das
 						{t("empty")}
 					</p>
 				) : (
-					<div className="mt-6">
-						<div className="flex h-40 items-end gap-1">
+					<div className="mt-6 overflow-x-auto">
+						<div
+							className="flex h-40 items-end gap-1"
+							style={{ minWidth: `${Math.max(serie.length * 6, 100)}px` }}
+						>
 							{serie.map((dia) => {
 								const altura = Math.max(4, Math.round((dia.focusMinutes / maximo) * 100));
-								const etiqueta = `${formatDate(dia.date, locale)}: ${formatMinutes(dia.focusMinutes)}`;
+								const etiqueta = `${formatDate(dia.date, locale, datos.granularity)}: ${formatMinutes(dia.focusMinutes)}`;
 
 								return (
 									<div
@@ -180,72 +280,84 @@ export async function DashboardPro({ datos, rango, deviceId, dispositivos }: Das
 						</div>
 
 						<div className="mt-2 flex justify-between text-[10px] text-muted">
-							<span>{formatDate(serie[0]?.date, locale)}</span>
-							<span>{formatDate(serie[serie.length - 1]?.date, locale)}</span>
+							<span>{formatDate(serie[0]?.date, locale, datos.granularity)}</span>
+							<span>{formatDate(serie[serie.length - 1]?.date, locale, datos.granularity)}</span>
 						</div>
 					</div>
 				)}
 			</section>
 
+			<WeeklyFocusChart
+				serie={datos.weekly}
+				title={t("weeklyFocus")}
+				subtitle={rangoLabel}
+				empty={t("noWeeklyData")}
+				locale={locale}
+			/>
+
+			<FocusCalendar
+				cells={datos.calendar}
+				title={t("calendarTitle")}
+				subtitle={rangoLabel}
+				empty={t("calendarEmpty")}
+				locale={locale}
+				sessionsLabel={(count) => t("calendarSessions", { count })}
+			/>
+
 			<div className="grid gap-4 lg:grid-cols-2">
 				<section className="rounded-2xl border border-border bg-surface p-6">
-					<h2 className="text-sm font-medium text-foreground">{t("topTasks")}</h2>
+					<div className="flex items-baseline justify-between gap-3">
+						<h2 className="text-sm font-medium text-foreground">{t("topTasksInRange")}</h2>
+						<p className="text-xs text-muted">{rangoLabel}</p>
+					</div>
 
 					{datos.byTask.length === 0 ? (
 						<p className="mt-4 text-sm text-muted">{t("noTaskData")}</p>
 					) : (
-						<ul className="mt-4 space-y-3">
-							{datos.byTask.map((tarea) => {
-								const maxTarea = datos.byTask[0]?.focusMinutes || 1;
-								const ancho = Math.max(4, Math.round((tarea.focusMinutes / maxTarea) * 100));
+						<div className="mt-4 overflow-x-auto">
+							<table className="w-full text-left text-sm">
+								<thead>
+									<tr className="text-[10px] uppercase tracking-[0.16em] text-muted">
+										<th className="pb-2 pr-3 font-medium">{t("taskName")}</th>
+										<th className="pb-2 pr-3 font-medium">{t("taskFocus")}</th>
+										<th className="pb-2 pr-3 font-medium">{t("taskSessions")}</th>
+										<th className="pb-2 pr-3 font-medium">{t("taskCompletion")}</th>
+										<th className="pb-2 font-medium">{t("taskLastWorked")}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{datos.byTask.map((tarea) => {
+										const porcentaje =
+											tarea.sessions > 0 ? Math.round((tarea.completed / tarea.sessions) * 100) : 0;
 
-								return (
-									<li key={tarea.tareaId || "sin-tarea"} className="space-y-1.5">
-										<div className="flex items-baseline justify-between gap-3 text-sm">
-											<span className="truncate text-foreground">{tarea.nombre || "—"}</span>
-											<span className="shrink-0 text-muted">
-												{formatMinutes(tarea.focusMinutes)}
-											</span>
-										</div>
-										<div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
-											<div
-												className="h-full rounded-full bg-primary"
-												style={{ width: `${ancho}%` }}
-											/>
-										</div>
-									</li>
-								);
-							})}
-						</ul>
+										return (
+											<tr key={tarea.tareaId || "sin-tarea"} className="border-t border-border/60">
+												<td className="max-w-40 truncate py-2 pr-3 text-foreground">
+													{tarea.nombre || "—"}
+												</td>
+												<td className="py-2 pr-3 text-muted">
+													{formatMinutes(tarea.focusMinutes)}
+												</td>
+												<td className="py-2 pr-3 text-muted">{tarea.sessions}</td>
+												<td className="py-2 pr-3 text-muted">{porcentaje}%</td>
+												<td className="py-2 text-muted">
+													{tarea.lastWorked ? formatDate(tarea.lastWorked, locale) : "—"}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
 					)}
 				</section>
 
-				<section className="rounded-2xl border border-border bg-surface p-6">
-					<h2 className="text-sm font-medium text-foreground">{t("devicesTitle")}</h2>
-
-					{datos.devices.length === 0 ? (
-						<p className="mt-4 text-sm text-muted">{t("noDevices")}</p>
-					) : (
-						<ul className="mt-4 space-y-3">
-							{datos.devices.map((dispositivo) => (
-								<li
-									key={dispositivo.deviceId}
-									className="flex items-center justify-between gap-3 text-sm"
-								>
-									<span className="truncate text-foreground">
-										{dispositivo.nombre ||
-											(dispositivo.deviceId === "desconocido"
-												? t("unknownDevice")
-												: dispositivo.deviceId.slice(0, 8))}
-									</span>
-									<span className="shrink-0 text-muted">
-										{formatMinutes(dispositivo.focusMinutes)}
-									</span>
-								</li>
-							))}
-						</ul>
-					)}
-				</section>
+				<DeviceFocusChart
+					devices={datos.devices}
+					title={t("devicesTitle")}
+					subtitle={rangoLabel}
+					empty={t("noDevices")}
+				/>
 			</div>
 		</div>
 	);
@@ -254,12 +366,12 @@ export async function DashboardPro({ datos, rango, deviceId, dispositivos }: Das
 function PeriodoCard({
 	titulo,
 	periodo,
-	t,
+	detalle,
 	destacado = false,
 }: {
 	titulo: string;
 	periodo: PeriodoResumen;
-	t: (clave: string, valores?: Record<string, number>) => string;
+	detalle: string;
 	destacado?: boolean;
 }) {
 	return (
@@ -272,12 +384,7 @@ function PeriodoCard({
 			<p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
 				{formatMinutes(periodo.focusMinutes)}
 			</p>
-			<p className="mt-1 text-xs text-muted">
-				{t("count", {
-					completed: periodo.completed,
-					interrupted: periodo.interrupted,
-				})}
-			</p>
+			<p className="mt-1 text-xs text-muted">{detalle}</p>
 		</article>
 	);
 }
@@ -292,13 +399,19 @@ function formatMinutes(minutos: number): string {
 	return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
 }
 
-function formatDate(fecha: string | undefined, locale: string): string {
+function formatDate(
+	fecha: string | undefined,
+	locale: string,
+	granularidad: GranularidadDashboard = "day",
+): string {
 	if (!fecha) {
 		return "";
 	}
 
-	return new Intl.DateTimeFormat(locale, {
-		day: "numeric",
-		month: "short",
-	}).format(new Date(`${fecha}T12:00:00`));
+	const opciones: Intl.DateTimeFormatOptions =
+		granularidad === "month"
+			? { month: "short", year: "numeric" }
+			: { day: "numeric", month: "short" };
+
+	return new Intl.DateTimeFormat(locale, opciones).format(new Date(`${fecha}T12:00:00`));
 }

@@ -2,21 +2,18 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { useTranslations } from "next-intl";
-import { useMemo } from "react";
-import { ObtenerEstadisticasHoy } from "../application/ObtenerEstadisticasHoy";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import { ESTADISTICAS_HOY_VACIAS, type EstadisticasHoy } from "../domain/estadisticas";
-import { DexieEstadisticasRepository } from "../infrastructure/DexieEstadisticasRepository";
 
 export function TodayStats() {
 	const t = useTranslations("Stats");
-	const servicio = useMemo(() => new ObtenerEstadisticasHoy(new DexieEstadisticasRepository()), []);
 	const datos = useLiveQuery<EstadisticasHoy>(async () => {
 		try {
-			return await servicio.execute();
+			return await getClientContainer().analytics.hoy.execute();
 		} catch {
 			return ESTADISTICAS_HOY_VACIAS;
 		}
-	}, [servicio]);
+	}, []);
 
 	const stats = datos ?? ESTADISTICAS_HOY_VACIAS;
 

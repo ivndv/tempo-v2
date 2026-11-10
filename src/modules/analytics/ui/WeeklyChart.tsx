@@ -2,22 +2,19 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo } from "react";
-import { ObtenerUltimosDias } from "../application/ObtenerUltimosDias";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import type { DiaResumen } from "../domain/estadisticas";
-import { DexieEstadisticasRepository } from "../infrastructure/DexieEstadisticasRepository";
 
 export function WeeklyChart() {
 	const t = useTranslations("Stats");
 	const locale = useLocale();
-	const servicio = useMemo(() => new ObtenerUltimosDias(new DexieEstadisticasRepository()), []);
 	const dias = useLiveQuery<DiaResumen[]>(async () => {
 		try {
-			return await servicio.execute(7);
+			return await getClientContainer().analytics.ultimosDias.execute(7);
 		} catch {
 			return [];
 		}
-	}, [servicio]);
+	}, []);
 
 	const lista = dias ?? [];
 	const total = lista.reduce((suma, dia) => suma + dia.minutos, 0);

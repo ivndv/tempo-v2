@@ -5,10 +5,10 @@ import { Lock } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import { obtenerDeviceId } from "@/shared/infrastructure/device";
 import { leerZonaHoraria } from "@/shared/infrastructure/preferences";
 import type { PeriodoResumen } from "../domain/dashboard";
-import { DexieDashboardRepository } from "../infrastructure/DexieDashboardRepository";
 
 interface DispositivoOpcion {
 	id: string;
@@ -22,8 +22,6 @@ interface DashboardViewProps {
 	dispositivos: DispositivoOpcion[];
 	offline?: boolean;
 }
-
-const repo = new DexieDashboardRepository();
 
 export function DashboardView({
 	plan,
@@ -47,7 +45,15 @@ export function DashboardView({
 	const tz = timezone ?? (montado ? leerZonaHoraria() : "America/Mexico_City");
 	const deviceId = filtro === "todos" ? null : filtro === "actual" ? (actualId ?? null) : filtro;
 
-	const datos = useLiveQuery(() => repo.obtener({ timezone: tz, deviceId }), [tz, deviceId]);
+	const datos = useLiveQuery(
+		() =>
+			getClientContainer().analytics.dashboardLocal.execute({
+				timezone: tz,
+				deviceId,
+				dias: rango,
+			}),
+		[tz, deviceId, rango],
+	);
 
 	const rangos = plan === "pro" ? [7, 30, 90, 365] : guest ? [7] : [7, 30];
 
@@ -185,7 +191,7 @@ export function DashboardView({
 
 			{offline ? (
 				<p className="rounded-xl border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-fg">
-					{t("offlineNote")}
+					{plan === "pro" ? t("localFallbackNote") : t("offlineNote")}
 				</p>
 			) : null}
 
@@ -249,7 +255,7 @@ export function DashboardView({
 
 			<div className="grid gap-4 lg:grid-cols-2">
 				<section className="rounded-2xl border border-border bg-surface p-6">
-					<h2 className="text-sm font-medium text-foreground">{t("topTasks")}</h2>
+					<h2 className="text-sm font-medium text-foreground">{t("topTasksInRange")}</h2>
 
 					{datos.byTask.length === 0 ? (
 						<p className="mt-4 text-sm text-muted">{t("noTaskData")}</p>

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/shared/infrastructure/db/database.types";
 import type { DashboardRepository } from "../domain/DashboardRepository";
 import type {
+	CalendarCell,
 	DashboardResumen,
 	DiaRecord,
 	DiaResumen,
@@ -29,6 +30,15 @@ interface TareaRpc {
 	tarea_id?: string;
 	nombre?: string;
 	focus_minutes?: number;
+	sessions?: number;
+	completed?: number;
+	last_worked?: string | null;
+}
+
+interface CalendarRpc {
+	date?: string;
+	focus_minutes?: number;
+	sessions?: number;
 }
 
 interface DispositivoRpc {
@@ -45,6 +55,10 @@ interface DashboardRpc {
 	all_time?: PeriodoRpc | null;
 	previous_week?: PeriodoRpc | null;
 	daily?: DiaRpc[] | null;
+	weekly?: DiaRpc[] | null;
+	calendar?: CalendarRpc[] | null;
+	granularity?: string | null;
+	range_days?: number | null;
 	by_task?: TareaRpc[] | null;
 	devices?: DispositivoRpc[] | null;
 	streak?: { current?: number; longest?: number } | null;
@@ -89,6 +103,17 @@ function mapTarea(value: TareaRpc): TareaResumen {
 		tareaId: value.tarea_id ?? "",
 		nombre: value.nombre ?? "",
 		focusMinutes: numero(value.focus_minutes),
+		sessions: numero(value.sessions),
+		completed: numero(value.completed),
+		lastWorked: value.last_worked ?? null,
+	};
+}
+
+function mapCalendar(value: CalendarRpc): CalendarCell {
+	return {
+		date: value.date ?? "",
+		focusMinutes: numero(value.focus_minutes),
+		sessions: numero(value.sessions),
 	};
 }
 
@@ -135,6 +160,9 @@ export class SupabaseDashboardRepository implements DashboardRepository {
 		}
 
 		const rpc = (data ?? {}) as unknown as DashboardRpc;
+		const granularity =
+			rpc.granularity === "week" ? "week" : rpc.granularity === "month" ? "month" : "day";
+		const rangeDays = typeof rpc.range_days === "number" ? rpc.range_days : 30;
 
 		return {
 			today: mapPeriodo(rpc.today),
@@ -143,6 +171,10 @@ export class SupabaseDashboardRepository implements DashboardRepository {
 			allTime: mapPeriodo(rpc.all_time),
 			previousWeek: mapPeriodo(rpc.previous_week),
 			daily: (rpc.daily ?? []).map(mapDia),
+			weekly: (rpc.weekly ?? []).map(mapDia),
+			calendar: (rpc.calendar ?? []).map(mapCalendar),
+			granularity,
+			rangeDays,
 			byTask: (rpc.by_task ?? []).map(mapTarea),
 			devices: (rpc.devices ?? []).map(mapDispositivo),
 			streak: {
