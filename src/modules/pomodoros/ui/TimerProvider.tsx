@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { obtenerDeviceId } from "@/shared/infrastructure/device";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 import {
 	actualizarTitulo,
 	notificar,
@@ -10,7 +10,6 @@ import {
 	reproducirBeep,
 } from "@/shared/infrastructure/notifications/browser";
 import { leerZonaHoraria } from "@/shared/infrastructure/preferences";
-import { PomodoroTimerService } from "../application/PomodoroTimerService";
 import {
 	BLOQUES,
 	type BloqueActivo,
@@ -18,7 +17,6 @@ import {
 	restanteSegundos,
 	type SesionActiva,
 } from "../domain/pomodoro";
-import { DexieTimerRepository } from "../infrastructure/DexieTimerRepository";
 
 const VEINTICUATRO_HORAS = 24 * 60 * 60 * 1000;
 
@@ -70,10 +68,7 @@ export function TimerProvider({
 	timezone?: string | null;
 }) {
 	const t = useTranslations("Timer");
-	const servicio = useMemo(
-		() => new PomodoroTimerService(new DexieTimerRepository(), undefined, obtenerDeviceId()),
-		[],
-	);
+	const servicio = useMemo(() => getClientContainer().timer.crear(), []);
 	const [sesion, setSesion] = useState<SesionActiva | null>(null);
 	const [restante, setRestante] = useState(0);
 	const [duracionMinutos, setDuracionMinutos] = useState(60);

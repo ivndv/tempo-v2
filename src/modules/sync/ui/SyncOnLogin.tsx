@@ -1,16 +1,17 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { crearSyncService } from "@/modules/sync/infrastructure/crearSyncService";
-import { createClient } from "@/shared/infrastructure/supabase/client";
+import { getClientContainer } from "@/shared/infrastructure/clientContainer";
 
 type EstadoSync = "idle" | "syncing" | "ok" | "pending" | "error";
 
 export function SyncOnLogin() {
 	const t = useTranslations("Sync");
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [estado, setEstado] = useState<EstadoSync>("idle");
 	const [pendientes, setPendientes] = useState(0);
 	const [muertos, setMuertos] = useState(0);
@@ -35,13 +36,11 @@ export function SyncOnLogin() {
 			ejecutando.current = true;
 
 			try {
-				const supabase = createClient();
-				// getSession lee la cookie sin ir a GoTrue; el sync fallará si expiró.
-				const {
-					data: { session },
-				} = await supabase.auth.getSession();
+				const contenedor = getClientContainer();
+				// obtenerSesion lee la sesión local sin ir a GoTrue; el sync fallará si expiró
+				const usuario = await contenedor.auth.obtenerSesion();
 
-				if (!session) {
+				if (!usuario) {
 					if (activo) {
 						setEstado("idle");
 						setPendientes(0);
@@ -54,8 +53,7 @@ export function SyncOnLogin() {
 					setEstado("syncing");
 				}
 
-				const servicio = crearSyncService();
-				const resultado = await servicio.execute();
+				const resultado = await contenedor.sync.ejecutar();
 
 				if (!activo) {
 					return;
@@ -73,6 +71,7 @@ export function SyncOnLogin() {
 				}
 
 				if (resultado.subidos > 0) {
+					void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 					router.refresh();
 				}
 			} catch {
@@ -105,7 +104,7 @@ export function SyncOnLogin() {
 			window.removeEventListener("online", onOnline);
 			document.removeEventListener("visibilitychange", onVisibility);
 		};
-	}, [router]);
+	}, [queryClient, router]);
 
 	if (estado === "idle") {
 		return null;

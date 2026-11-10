@@ -15,6 +15,15 @@ export interface TareaResumen {
 	tareaId: string;
 	nombre: string;
 	focusMinutes: number;
+	sessions: number;
+	completed: number;
+	lastWorked: string | null;
+}
+
+export interface CalendarCell {
+	date: string;
+	focusMinutes: number;
+	sessions: number;
 }
 
 export interface DispositivoResumen {
@@ -44,6 +53,8 @@ export interface OpcionesDashboard {
 	deviceId?: string | null;
 }
 
+export type GranularidadDashboard = "day" | "week" | "month";
+
 export interface DashboardResumen {
 	today: PeriodoResumen;
 	week: PeriodoResumen;
@@ -51,6 +62,10 @@ export interface DashboardResumen {
 	allTime: PeriodoResumen;
 	previousWeek: PeriodoResumen;
 	daily: DiaResumen[];
+	weekly: DiaResumen[];
+	calendar: CalendarCell[];
+	granularity: GranularidadDashboard;
+	rangeDays: number;
 	byTask: TareaResumen[];
 	devices: DispositivoResumen[];
 	streak: RachaResumen;

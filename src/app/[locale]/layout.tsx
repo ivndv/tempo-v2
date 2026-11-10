@@ -7,6 +7,7 @@ import "../globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/i18n/seo";
+import { QueryProvider } from "@/shared/infrastructure/query/QueryProvider";
 
 export function generateStaticParams() {
 	return routing.locales.map((locale) => ({ locale }));
@@ -65,6 +66,7 @@ export default async function LocaleLayout({
 		Sync: todas.Sync,
 		App: todas.App,
 		Dashboard: todas.Dashboard,
+		Billing: todas.Billing,
 		Settings: todas.Settings,
 	};
 
@@ -80,7 +82,9 @@ export default async function LocaleLayout({
 					dangerouslySetInnerHTML={{ __html: "self.__name=self.__name||function(f){return f}" }}
 				/>
 				<ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-					<NextIntlClientProvider messages={mensajesCliente}>{children}</NextIntlClientProvider>
+					<NextIntlClientProvider messages={mensajesCliente}>
+						<QueryProvider>{children}</QueryProvider>
+					</NextIntlClientProvider>
 				</ThemeProvider>
 				<Script
 					src="https://static.cloudflareinsights.com/beacon.min.js"

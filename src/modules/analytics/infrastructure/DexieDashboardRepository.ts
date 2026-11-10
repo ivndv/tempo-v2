@@ -2,18 +2,21 @@
 
 import { fechaLocal, type RegistroPomodoro } from "@/modules/pomodoros/domain/pomodoro";
 import { getLocalDb } from "@/shared/infrastructure/dexie/db";
+import type {
+	DashboardLocalRepository,
+	OpcionesDashboardLocal,
+} from "../domain/DashboardLocalRepository";
 import type { PeriodoResumen } from "../domain/dashboard";
 import type { DashboardLocalResumen } from "../domain/dashboardLocal";
 
 const DIAS_HISTORIAL = 365;
 
-interface OpcionesDashboard {
-	timezone: string;
-	deviceId?: string | null;
-}
-
-export class DexieDashboardRepository {
-	async obtener({ timezone, deviceId }: OpcionesDashboard): Promise<DashboardLocalResumen> {
+export class DexieDashboardRepository implements DashboardLocalRepository {
+	async obtener({
+		timezone,
+		deviceId,
+		dias,
+	}: OpcionesDashboardLocal): Promise<DashboardLocalResumen> {
 		const db = getLocalDb();
 		const hoy = fechaLocal(new Date(), timezone);
 		const [pomodoros, tareas] = await Promise.all([db.pomodoros.toArray(), db.tareas.toArray()]);
@@ -21,6 +24,11 @@ export class DexieDashboardRepository {
 		const filtrados = pomodoros.filter(
 			(pomodoro) => !deviceId || !pomodoro.deviceId || pomodoro.deviceId === deviceId,
 		);
+
+		const diasRango =
+			typeof dias === "number" && dias > 0 ? Math.min(dias, DIAS_HISTORIAL) : DIAS_HISTORIAL;
+		const desdeRango = restarDias(hoy, diasRango - 1);
+		const filtradosRango = filtrados.filter((pomodoro) => pomodoro.localDate >= desdeRango);
 
 		const fechas = Array.from({ length: DIAS_HISTORIAL }, (_, indice) =>
 			restarDias(hoy, indice),
@@ -76,16 +84,38 @@ export class DexieDashboardRepository {
 		};
 
 		const nombres = new Map(tareas.map((tarea) => [tarea.id, tarea.nombre]));
-		const porTarea = new Map<string, { nombre: string; minutos: number }>();
+		const porTarea = new Map<
+			string,
+			{
+				nombre: string;
+				minutos: number;
+				sesiones: number;
+				completadas: number;
+				ultima: string | null;
+			}
+		>();
 		const porDispositivo = new Map<string, { minutos: number; completados: number }>();
 
-		for (const pomodoro of filtrados) {
+		for (const pomodoro of filtradosRango) {
 			const clave = pomodoro.tareaId ?? "";
 			const actualTarea = porTarea.get(clave) ?? {
 				nombre: clave ? (nombres.get(clave) ?? "") : "",
 				minutos: 0,
+				sesiones: 0,
+				completadas: 0,
+				ultima: null,
 			};
 			actualTarea.minutos += pomodoro.minutos;
+			actualTarea.sesiones += 1;
+
+			if (pomodoro.estado !== "interrupted") {
+				actualTarea.completadas += 1;
+			}
+
+			if (!actualTarea.ultima || pomodoro.localDate > actualTarea.ultima) {
+				actualTarea.ultima = pomodoro.localDate;
+			}
+
 			porTarea.set(clave, actualTarea);
 
 			const claveDispositivo = pomodoro.deviceId || "desconocido";
@@ -107,6 +137,9 @@ export class DexieDashboardRepository {
 				tareaId,
 				nombre: valor.nombre,
 				focusMinutes: valor.minutos,
+				sessions: valor.sesiones,
+				completed: valor.completadas,
+				lastWorked: valor.ultima,
 			}))
 			.sort((a, b) => b.focusMinutes - a.focusMinutes)
 			.slice(0, 10);
@@ -122,6 +155,10 @@ export class DexieDashboardRepository {
 
 		const porDia = new Map<string, number>();
 		const porSemana = new Map<string, number>();
+		const porSemanaRango = new Map<
+			string,
+			{ minutos: number; completados: number; interrumpidos: number }
+		>();
 		let sesionMasLarga = 0;
 
 		for (const pomodoro of filtrados) {
@@ -130,6 +167,33 @@ export class DexieDashboardRepository {
 			porSemana.set(semana, (porSemana.get(semana) ?? 0) + pomodoro.minutos);
 			sesionMasLarga = Math.max(sesionMasLarga, pomodoro.minutos);
 		}
+
+		for (const pomodoro of filtradosRango) {
+			const semana = inicioDeSemana(pomodoro.localDate);
+			const actual = porSemanaRango.get(semana) ?? {
+				minutos: 0,
+				completados: 0,
+				interrumpidos: 0,
+			};
+			actual.minutos += pomodoro.minutos;
+
+			if (pomodoro.estado === "interrupted") {
+				actual.interrumpidos += 1;
+			} else {
+				actual.completados += 1;
+			}
+
+			porSemanaRango.set(semana, actual);
+		}
+
+		const weekly = Array.from(porSemanaRango.entries())
+			.sort(([a], [b]) => a.localeCompare(b))
+			.map(([date, valor]) => ({
+				date,
+				focusMinutes: valor.minutos,
+				completed: valor.completados,
+				interrupted: valor.interrumpidos,
+			}));
 
 		const diasActivos = Array.from(new Set(filtrados.map((pomodoro) => pomodoro.localDate)))
 			.filter((fecha) => (porDia.get(fecha) ?? 0) > 0)
@@ -171,6 +235,14 @@ export class DexieDashboardRepository {
 			allTime: resumir(filtrados),
 			previousWeek: periodo(inicioSemanaAnterior, finSemanaAnterior),
 			daily,
+			weekly,
+			calendar: daily.map((dia) => ({
+				date: dia.date,
+				focusMinutes: dia.focusMinutes,
+				sessions: dia.completed + dia.interrupted,
+			})),
+			granularity: "day",
+			rangeDays: diasRango,
 			byTask,
 			devices,
 			streak: { current: rachaVigente, longest: rachaLarga },

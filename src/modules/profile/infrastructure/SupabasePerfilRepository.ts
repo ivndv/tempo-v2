@@ -22,4 +22,43 @@ export class SupabasePerfilRepository implements PerfilRepository {
 			locale: data?.locale === "es" ? "es" : "en",
 		};
 	}
+
+	async actualizar(cambios: Partial<Perfil>): Promise<void> {
+		const fila: {
+			display_name?: string | null;
+			timezone?: string;
+			locale?: "en" | "es";
+		} = {};
+
+		if (cambios.displayName !== undefined) {
+			fila.display_name = cambios.displayName;
+		}
+
+		if (cambios.timezone !== undefined) {
+			fila.timezone = cambios.timezone;
+		}
+
+		if (cambios.locale !== undefined) {
+			fila.locale = cambios.locale;
+		}
+
+		if (Object.keys(fila).length === 0) {
+			return;
+		}
+
+		const {
+			data: { user },
+			error: usuarioError,
+		} = await this.supabase.auth.getUser();
+
+		if (usuarioError || !user) {
+			throw new Error(usuarioError?.message ?? "No hay una sesión activa");
+		}
+
+		const { error } = await this.supabase.from("profiles").update(fila).eq("id", user.id);
+
+		if (error) {
+			throw new Error(error.message);
+		}
+	}
 }
