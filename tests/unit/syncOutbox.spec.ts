@@ -379,4 +379,25 @@ describe("SincronizarPendientes", () => {
 
 		expect(local.cursores.has("tareas")).toBe(false);
 	});
+
+	it("trata una tarea eliminada en el servidor como conflicto", async () => {
+		const outbox = new MemoryOutboxRepository();
+		const gateway = new FakeGateway();
+		const local = new FakeLocal();
+		gateway.resultadoTarea = "deleted";
+		local.cursores.set("tareas", { updatedAt: "2026-10-23T09:00:00.000Z", id: "" });
+
+		await outbox.encolar({
+			entity: "tarea",
+			operation: "upsert",
+			payload: payloadTarea("t1"),
+		});
+
+		const servicio = new SincronizarPendientes(outbox, gateway, local);
+		const resultado = await servicio.execute();
+
+		expect(resultado.subidos).toBe(1);
+		expect(resultado.pendientes).toBe(0);
+		expect(local.cursores.has("tareas")).toBe(false);
+	});
 });

@@ -1,2 +1,5 @@
-// IndexedDB real en memoria para probar los repositorios de Dexie.
 import "fake-indexeddb/auto";
+import { cargarEnvLocal } from "./env";
+
+// Carga .env.local para los tests de integración locales.
+cargarEnvLocal();

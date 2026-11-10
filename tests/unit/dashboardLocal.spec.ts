@@ -72,6 +72,12 @@ describe("DexieDashboardRepository", () => {
 		expect(actual.devices).toHaveLength(1);
 		expect(actual.devices[0]?.deviceId).toBe("device-a");
 		expect(actual.daily.at(-1)?.date).toBe(hoy);
+		expect(actual.calendar).toHaveLength(365);
+		expect(actual.calendar.find((dia) => dia.date === hoy)).toEqual({
+			date: hoy,
+			focusMinutes: 25,
+			sessions: 1,
+		});
 		expect(actual.byTask[0]).toMatchObject({ tareaId: "t1", nombre: "Escribir" });
 		expect(actual.streak.current).toBe(1);
 		expect(actual.bestDay).toMatchObject({ date: hoy, focusMinutes: 25 });
@@ -87,6 +93,7 @@ describe("DexieDashboardRepository", () => {
 		expect(todo.allTime.focusMinutes).toBe(50);
 		expect(todo.devices).toHaveLength(2);
 		expect(todo.daily.at(-1)?.focusMinutes).toBe(25);
+		expect(todo.calendar.find((dia) => dia.date === todo.daily.at(-1)?.date)?.sessions).toBe(1);
 		expect(todo.week.focusMinutes).toBe(50);
 		expect(todo.streak.current).toBe(2);
 		expect(todo.streak.longest).toBe(2);
