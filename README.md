@@ -49,6 +49,33 @@ Aplicación web para gestionar tu tiempo de estudio o trabajo con la técnica Po
 - **Herramientas**: Bun, Biome, TypeScript
 - **Infra & CI/CD**: Cloudflare Workers, Supabase, Upstash, Polar, GitHub Actions
 
+## Tests
+
+```bash
+bun run test:unit          # dominio, plan, dashboard local, sync, timezone
+bun run test:integration   # RLS, RPC get_dashboard y plan contra Supabase local
+bun run test:e2e           # auth, dashboard Free/Pro, rangos, dispositivos y caché
+```
+
+Los tests de integración y E2E requieren:
+
+- Supabase local (`bun run db:start`)
+- `.env.local` con `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY`
+- Playwright Chromium (`bunx playwright install chromium`)
+- Build previo para E2E (`bun run build`)
+
+Los tests E2E crean y eliminan sus propios usuarios de prueba. No usan producción.
+
+En CI, integración y E2E levantan un Supabase efímero dentro del runner de GitHub Actions. No usan el Supabase local del desarrollador, staging ni producción.
+
+La cadencia es:
+
+- push a `develop`: lint, tipos, unit, integración y E2E
+- push a `main`: lint, tipos, unit y deploy
+- manual: suite completa
+
+`main` solo promueve lo que ya pasó por `develop`. No se usan PRs ni ejecuciones nocturnas.
+
 ## Despliegue
 
 La aplicación se encuentra desplegada en **Cloudflare Workers** mediante OpenNext. Puedes usarla directamente aquí: [Tempo v2](https://tempo.liuma.app/)
