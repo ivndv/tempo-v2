@@ -25,6 +25,7 @@ export type Database = {
 		Tables: {
 			billing_events: {
 				Row: {
+					event_at: string;
 					id: string;
 					payload: NonNullable<Json>;
 					processed_at: string;
@@ -32,12 +33,14 @@ export type Database = {
 				};
 				ComputedFields: never;
 				Insert: {
+					event_at?: string;
 					id: string;
 					payload: NonNullable<Json>;
 					processed_at?: string;
 					type: string;
 				};
 				Update: {
+					event_at?: string;
 					id?: string;
 					payload?: NonNullable<Json>;
 					processed_at?: string;
@@ -253,6 +256,7 @@ export type Database = {
 					cancel_at_period_end: boolean;
 					created_at: string;
 					current_period_end: string | null;
+					last_event_at: string | null;
 					plan: string;
 					provider: string;
 					provider_customer_id: string | null;
@@ -266,6 +270,7 @@ export type Database = {
 					cancel_at_period_end?: boolean;
 					created_at?: string;
 					current_period_end?: string | null;
+					last_event_at?: string | null;
 					plan?: string;
 					provider?: string;
 					provider_customer_id?: string | null;
@@ -278,6 +283,7 @@ export type Database = {
 					cancel_at_period_end?: boolean;
 					created_at?: string;
 					current_period_end?: string | null;
+					last_event_at?: string | null;
 					plan?: string;
 					provider?: string;
 					provider_customer_id?: string | null;
@@ -361,8 +367,27 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
+			apply_polar_subscription_event: {
+				Args: {
+					p_cancel_at_period_end?: boolean;
+					p_current_period_end?: string;
+					p_customer_id?: string;
+					p_event_at: string;
+					p_event_id: string;
+					p_event_type: string;
+					p_payload: Json;
+					p_status: string;
+					p_subscription_id?: string;
+					p_user_id: string;
+				};
+				Returns: boolean;
+			};
 			get_dashboard: { Args: { p_device_id?: string; p_dias?: number }; Returns: Json };
 			purgar_tombstones: { Args: { dias?: number }; Returns: number };
+			record_billing_event: {
+				Args: { p_event_at: string; p_event_id: string; p_event_type: string; p_payload: Json };
+				Returns: boolean;
+			};
 			registrar_dispositivo: {
 				Args: { p_id: string; p_name: string; p_platform?: string; p_theme?: string };
 				Returns: undefined;
